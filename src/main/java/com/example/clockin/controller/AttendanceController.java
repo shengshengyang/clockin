@@ -1,30 +1,38 @@
 package com.example.clockin.controller;
 
 import com.example.clockin.dto.ClockInRequest;
+import com.example.clockin.model.AttendanceRecord;
+import com.example.clockin.service.AttendanceService;
 import com.example.clockin.util.DistanceUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/attendance")
+import java.security.Principal;
+import java.util.List;
+
+@Controller
+@RequestMapping("/attendance")
 public class AttendanceController {
 
-    @PostMapping("/clock-in")
-    public ResponseEntity<?> clockIn(@RequestBody ClockInRequest request) {
-        double userLat = request.getLatitude();
-        double userLng = request.getLongitude();
+    @Autowired
+    AttendanceService attendanceService;
+    @GetMapping("/clock-in")
+    public String clockInPage(Model model, Principal principal) {
+        // 獲取公司的經緯度，傳遞給前端地圖顯示
+        double companyLat = attendanceService.getCompanyLatitude();
+        double companyLng = attendanceService.getCompanyLongitude();
+        model.addAttribute("companyLat", companyLat);
+        model.addAttribute("companyLng", companyLng);
 
-        if (DistanceUtil.isWithin200Meters(userLat, userLng)) {
-            // 保存打卡記錄
-            return ResponseEntity.ok("打卡成功");
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("您不在允許的打卡範圍內");
-        }
+        // 獲取當前用戶的打卡記錄
+        String username = principal.getName();
+        List<AttendanceRecord> records = attendanceService.getAttendanceRecordsByUsername(username);
+        model.addAttribute("records", records);
+
+        return "clock-in";
     }
-
-    // 其他方法...
 }

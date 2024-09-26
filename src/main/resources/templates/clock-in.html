@@ -1,10 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+    <title>打卡頁面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <!-- 引入 Leaflet.js 地圖庫 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- 引入 Leaflet.Locate 控件（用於獲取用戶位置） -->
+    <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css"/>
 
+</head>
+
+<body>
+<div class="container">
+    <h2 class="text-center mt-5">歡迎使用打卡系統</h2>
+    <div class="text-right">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn btn-secondary">登出</button>
+        </form>
+    </div>
+
+    <!-- 地圖容器 -->
+    <div id="map" style="height: 400px;" class="mt-4"></div>
+
+    <!-- 顯示距離信息 -->
+    <div class="text-center mt-3">
+        <p id="distance-info"></p>
+    </div>
+
+    <!-- 打卡按鈕 -->
+    <div class="text-center mt-4">
+        <button class="btn btn-primary" onclick="clockIn()">打卡</button>
+    </div>
+
+    <!-- 過去打卡記錄 -->
+    <h3 class="mt-5">過去的打卡記錄</h3>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>日期時間</th>
+            <th>緯度</th>
+            <th>經度</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="record : ${records}">
+            <td th:text="${#temporals.format(record.clockInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+            <td th:text="${record.latitude}"></td>
+            <td th:text="${record.longitude}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 引入必要的 JavaScript 庫 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    var companyLat = /*[[${companyLat}]]*/ 25.033964;
+    var companyLng = /*[[${companyLng}]]*/ 121.564468;
+    var userLat, userLng;
+    var map = L.map('map').setView([companyLat, companyLng], 16);
+
+    // 加載地圖圖塊
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap 貢獻者'
+    }).addTo(map);
+
+    // 標記公司位置
+    var companyMarker = L.marker([companyLat, companyLng]).addTo(map)
+        .bindPopup('公司位置').openPopup();
+
+    // 添加定位控制
+    var lc = L.control.locate({
+        position: 'topleft',
+        strings: {
+            title: "顯示我的位置"
+        },
+        onLocationError: function(err) {
+            alert("無法獲取您的位置信息：" + err.message);
+        }
+    }).addTo(map);
+
+    lc.start(); // 開始定位
+
+    // 獲取用戶位置並在地圖上顯示
+    map.on('locationfound', function(e) {
+        userLat = e.latitude;
+        userLng = e.longitude;
+
+        // 標記用戶位置
+        var userMarker = L.marker([userLat, userLng]).addTo(map)
+            .bindPopup('您的位置').openPopup();
+
+        // 計算距離
+        var distance = calculateDistance(userLat, userLng, companyLat, companyLng);
+
+        // 顯示距離信息
+        document.getElementById('distance-info').innerText = '您與公司的距離：' + distance.toFixed(2) + ' 米';
+
+        // 調整地圖視野
+        var group = new L.featureGroup([companyMarker, userMarker]);
+        map.fitBounds(group.getBounds());
+    });
+
+    // 計算兩點之間的距離（米）
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+        function toRad(x) {
+            return x * Math.PI / 180;
+        }
+
+        var R = 6378137; // 地球半徑（米）
+        var dLat = toRad(lat2 - lat1);
+        var dLng = toRad(lng2 - lng1);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        var d = R * c;
+        return d;
+    }
+
+    function clockIn() {
+        if (userLat !== undefined && userLng !== undefined) {
+            var data = {
+                latitude: userLat,
+                longitude: userLng
+            };
+
+            fetch('/attendance/clock-in', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.text())
+                .then(message => {
+                    alert(message);
+                    if (message === '打卡成功') {
+                        // 可選：刷新頁面或更新打卡記錄列表
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        } else {
+            alert("正在獲取您的位置信息，請稍候再試。");
+        }
+    }
+</script>
 </body>
 </html>

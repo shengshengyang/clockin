@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登入</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+<div class="container">
+    <h2 class="text-center mt-5">打卡系統登入</h2>
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label>用戶名：</label>
+                    <input type="text" name="username" class="form-control" required autofocus />
+                </div>
+                <div class="form-group">
+                    <label>密碼：</label>
+                    <input type="password" name="password" class="form-control" required />
+                </div>
+                <!-- CSRF Token -->
+                <button type="submit" class="btn btn-primary btn-block">登入</button>
+                <!-- 顯示錯誤訊息 -->
+                <div th:if="${param.error}" class="alert alert-danger mt-3">
+                    用戶名或密碼錯誤，請重試。
+                </div>
+                <!-- 登出成功提示 -->
+                <div th:if="${param.logout}" class="alert alert-success mt-3">
+                    您已成功登出。
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
