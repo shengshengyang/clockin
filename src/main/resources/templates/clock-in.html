@@ -61,10 +61,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    var companyLat = /*[[${companyLat}]]*/ 25.033964;
-    var companyLng = /*[[${companyLng}]]*/ 121.564468;
-    var userLat, userLng;
-    var map = L.map('map').setView([companyLat, companyLng], 16);
+    const companyLat = [[${companyLat}]];
+    const companyLng = [[${companyLng}]];
+    let userLat, userLng;
+    const map = L.map('map').setView([companyLat, companyLng], 16);
 
     // 加載地圖圖塊
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -72,16 +72,16 @@
     }).addTo(map);
 
     // 標記公司位置
-    var companyMarker = L.marker([companyLat, companyLng]).addTo(map)
+    const companyMarker = L.marker([companyLat, companyLng]).addTo(map)
         .bindPopup('公司位置').openPopup();
 
     // 添加定位控制
-    var lc = L.control.locate({
+    const lc = L.control.locate({
         position: 'topleft',
         strings: {
             title: "顯示我的位置"
         },
-        onLocationError: function(err) {
+        onLocationError: function (err) {
             alert("無法獲取您的位置信息：" + err.message);
         }
     }).addTo(map);
@@ -89,7 +89,7 @@
     lc.start(); // 開始定位
 
     // 獲取用戶位置並在地圖上顯示
-    map.on('locationfound', function(e) {
+    map.on('locationfound', function (e) {
         userLat = e.latitude;
         userLng = e.longitude;
 
@@ -114,20 +114,20 @@
             return x * Math.PI / 180;
         }
 
-        var R = 6378137; // 地球半徑（米）
-        var dLat = toRad(lat2 - lat1);
-        var dLng = toRad(lng2 - lng1);
-        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        const R = 6378137; // 地球半徑（米）
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
             Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        var d = R * c;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const d = R * c;
         return d;
     }
 
     function clockIn() {
         if (userLat !== undefined && userLng !== undefined) {
-            var data = {
+            const data = {
                 latitude: userLat,
                 longitude: userLng
             };

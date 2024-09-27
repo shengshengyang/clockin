@@ -69,7 +69,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests((authorize) -> authorize.requestMatchers("/attendance/**")
                         .authenticated()
-                        .requestMatchers("/css/**", "/js/**", "/images/**")
+                        .requestMatchers("/css/**", "/js/**", "/images/**","/assets/**")
                         .permitAll().anyRequest().permitAll())
                 .formLogin(form -> form
                         .loginPage("/login")

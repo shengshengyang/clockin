@@ -1,40 +1,64 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-Hant-TW" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layouts/layout :: layout(
+          content = ~{::main},
+          title = '登入',
+          links = ~{},
+          scripts = ~{}
+      )}">
 <head>
     <meta charset="UTF-8">
     <title>登入</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- 引入 Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 
 <body>
-<div class="container">
-    <h2 class="text-center mt-5">打卡系統登入</h2>
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-6">
-            <form th:action="@{/login}" method="post">
-                <div class="form-group">
-                    <label>用戶名：</label>
-                    <input type="text" name="username" class="form-control" required autofocus />
+<main>
+    <!-- login page start-->
+    <div class="container-fluid p-0">
+        <div class="row m-0">
+            <div class="col-12 p-0">
+                <div class="login-card login-dark">
+                    <div>
+                        <div><a class="logo" href="index.html"><img class="img-fluid for-light" src="../assets/images/logo/logo.png" alt="looginpage"><img class="img-fluid for-dark" src="../assets/images/logo/logo_dark.png" alt="looginpage"></a></div>
+                        <div class="login-main">
+                            <form class="theme-form" th:action="@{/login}" method="post">
+                                <h4>打卡系統登入</h4>
+                                <p>輸入用戶名及密碼</p>
+                                <div class="form-group">
+                                    <label class="col-form-label">用戶名：</label>
+                                    <input class="form-control" type="text" name="username" required autofocus>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-form-label">密碼</label>
+                                    <div class="form-input position-relative">
+                                        <input class="form-control" type="password" name="password" required=""
+                                               placeholder="*********">
+                                        <div class="show-hide"><span class="show">                         </span></div>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <a class="link" href="#">Forgot password?</a>
+                                    <div class="text-end mt-3">
+                                        <button class="btn btn-primary btn-block w-100" type="submit">登入</button>
+                                    </div>
+                                </div>
+                                <!-- 顯示錯誤訊息 -->
+                                <div th:if="${param.error}" class="alert alert-light-danger mt-3">
+                                    用戶名或密碼錯誤，請重試。
+                                </div>
+                                <!-- 登出成功提示 -->
+                                <div th:if="${param.logout}" class="alert alert-light-success mt-3">
+                                    您已成功登出。
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>密碼：</label>
-                    <input type="password" name="password" class="form-control" required />
-                </div>
-                <!-- CSRF Token -->
-                <button type="submit" class="btn btn-primary btn-block">登入</button>
-                <!-- 顯示錯誤訊息 -->
-                <div th:if="${param.error}" class="alert alert-danger mt-3">
-                    用戶名或密碼錯誤，請重試。
-                </div>
-                <!-- 登出成功提示 -->
-                <div th:if="${param.logout}" class="alert alert-success mt-3">
-                    您已成功登出。
-                </div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
+</main>
 </body>
 </html>

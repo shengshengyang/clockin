@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/attendance")
@@ -34,5 +35,21 @@ public class AttendanceController {
         model.addAttribute("records", records);
 
         return "clock-in";
+    }
+
+    @PostMapping("/clock-in")
+    @ResponseBody
+    public String clockIn(@RequestBody Map<String, Double> location, Principal principal) {
+        String username = principal.getName();
+        double latitude = location.get("latitude");
+        double longitude = location.get("longitude");
+
+        boolean success = attendanceService.handleClockIn(username, latitude, longitude);
+
+        if (success) {
+            return "打卡成功";
+        } else {
+            return "打卡失敗，您不在允許的範圍內";
+        }
     }
 }
