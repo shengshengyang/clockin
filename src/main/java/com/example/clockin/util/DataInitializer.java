@@ -27,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByUsername("user1") == null) {
             User user1 = new User();
             user1.setUsername("user1");
+            user1.setName("測試使用者");
             user1.setPassword(passwordEncoder.encode("password1")); // 使用 PasswordEncoder 加密密码
             user1.setRole("USER");
             userRepository.save(user1);
@@ -35,6 +36,7 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByUsername("admin") == null) {
             User admin = new User();
             admin.setUsername("admin");
+            admin.setName("管理員");
             admin.setPassword(passwordEncoder.encode("password2")); // 使用 PasswordEncoder 加密密码
             admin.setRole("ADMIN");
             userRepository.save(admin);

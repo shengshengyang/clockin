@@ -1,3 +1,5 @@
+use Attendance;
+
 -- 建立用戶表
 CREATE TABLE users (
                        id INT AUTO_INCREMENT PRIMARY KEY,
