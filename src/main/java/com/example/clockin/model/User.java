@@ -21,6 +21,13 @@ public class User {
     @Column(nullable = false, length = 100)
     private String password;
 
+    @Column(nullable = false, length = 100)
+    private String email;  // 新增 email 字段
+
+    @Lob
+    @Column(name = "avatar", columnDefinition = "TEXT")  // 新增 avatar 字段，用於存儲 Base64 圖像
+    private String avatar;
+
     @Column(nullable = false, length = 20)
     private String role;
 
@@ -41,6 +48,7 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // Getters 和 Setters
     public Integer getId() {
         return id;
     }
@@ -63,6 +71,22 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public String getRole() {

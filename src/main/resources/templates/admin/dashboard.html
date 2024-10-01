@@ -2,15 +2,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="layouts/layout-sidebar :: layout(
     content = ~{::main},
-    title = '考勤',
+    title = '管理員頁面',
     links = ~{},
     scripts = ~{}
 )">
 <body>
 <main>
-    <th:replace th:src="~{layouts/sidebar}"></th:replace>
-    <div class="container">
-        <h2>考勤</h2>
         <table class="table table-striped">
             <thead>
             <tr>
@@ -31,6 +28,5 @@
         </table>
     </div>
 </main>
->
 </body>
 </html>
