@@ -3,30 +3,202 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="layouts/layout-sidebar :: layout(
     content = ~{::main},
     title = '管理員頁面',
-    links = ~{},
-    scripts = ~{}
+    links = ~{::links},
+    scripts = ~{::scripts}
 )">
+<!-- 將 links 放入 layout -->
+<th:block th:fragment="links">
+    <link rel="stylesheet" type="text/css" th:href="@{/assets/css/vendors/jsgrid.css}">
+    <!-- 引入 flatpickr CSS 和 JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <style>
+        /* 自定義按鈕樣式 */
+        .jsgrid-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            margin-right: 5px;
+        }
+        .jsgrid-button i {
+            font-size: 18px;
+            color: #555; /* 按鈕顏色 */
+        }
+        .jsgrid-button i:hover {
+            color: #000; /* 滑鼠懸停時變化顏色 */
+        }
+        /* 保存和取消按鈕樣式 */
+        .jsgrid-button-confirm {
+            color: green;
+        }
+        .jsgrid-button-cancel {
+            color: orange;
+        }
+    </style>
+</th:block>
 <body>
 <main>
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th>username</th>
-                <th>姓名</th>
-                <th>打卡時間</th>
-                <th>狀態</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="record : ${records}">
-                <td th:text="${record.user.username}"></td>
-                <td th:text="${record.user.name}"></td>
-                <td th:text="${#temporals.format(record.clockInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                <td th:text="${record.status}"></td>
-            </tr>
-            </tbody>
-        </table>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">打卡紀錄表</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="jsGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </main>
 </body>
+<!-- 將 scripts 放入 layout -->
+<th:block th:fragment="scripts">
+    <script>
+        $(function () {
+            // 初始化 jsGrid
+            $("#jsGrid").jsGrid({
+                width: "100%",
+                height: "400px",
+
+                inserting: true, // 開啟新增功能
+                editing: true,   // 開啟編輯功能
+                sorting: true,   // 開啟排序功能
+                paging: true,    // 開啟分頁功能
+
+                autoload: true,  // 自動加載數據
+                pageSize: 10,    // 每頁顯示 10 條數據
+                pageButtonCount: 5,
+
+                deleteConfirm: "您確定要刪除此打卡紀錄嗎？",
+
+                // 定義控制器
+                controller: {
+                    loadData: function() {
+                        return $.ajax({
+                            type: "GET",
+                            url: "/attendance/records",
+                            dataType: "json"
+                        }).then(function(response) {
+                            return response.data; // 使用返回數據中的 data 字段
+                        });
+                    },
+                    insertItem: function(item) {
+                        return $.ajax({
+                            type: "POST",
+                            url: "/attendance/add",
+                            data: item
+                        });
+                    },
+                    updateItem: function(item) {
+                        return $.ajax({
+                            type: "POST",
+                            url: "/attendance/update",
+                            data: item
+                        });
+                    },
+                    deleteItem: function(item) {
+                        return $.ajax({
+                            type: "DELETE",
+                            url: "/attendance/delete",
+                            data: item
+                        });
+                    }
+                },
+
+                // 定義表格的列
+                fields: [
+                    { name: "username", type: "text", title: "使用者名稱", width: 150, validate: "required", editing: false },
+                    {
+                        name: "clockInTime",
+                        title: "打卡時間",
+                        width: 200,
+                        align: "center",
+                        validate: "required",
+                        itemTemplate: function(value) {
+                            return value ? new Date(value).toLocaleString() : "";
+                        },
+                        insertTemplate: function() {
+                            var $input = $("<input>").attr("type", "text").addClass("flatpickr-input");
+                            flatpickr($input[0], {
+                                enableTime: true,
+                                dateFormat: "Y-m-d H:i",
+                                time_24hr: true
+                            });
+                            this._insertPicker = $input;
+                            return $input;
+                        },
+                        editTemplate: function(value) {
+                            var $input = $("<input>").attr("type", "text").addClass("flatpickr-input");
+                            flatpickr($input[0], {
+                                enableTime: true,
+                                dateFormat: "Y-m-d H:i",
+                                time_24hr: true,
+                                defaultDate: new Date(value)
+                            });
+                            this._editPicker = $input;
+                            return $input;
+                        },
+                        insertValue: function() {
+                            return this._insertPicker.val();  // flatpickr 自動返回格式化的日期
+                        },
+                        editValue: function() {
+                            return this._editPicker.val();  // flatpickr 自動返回格式化的日期
+                        }
+                    },
+                    { name: "latitude", type: "number", title: "緯度", width: 100, align: "center", editing: false },
+                    { name: "longitude", type: "number", title: "經度", width: 100, align: "center", editing: false },
+                    {
+                        type: "control",
+                        itemTemplate: function(value, item) {
+                            // 使用 Font Awesome 圖標來作為按鈕
+                            var $editButton = $("<button>")
+                                .addClass("jsgrid-button")
+                                .append("<i class='fas fa-edit'></i>")  // 編輯圖標
+                                .click(function(e) {
+                                    e.stopPropagation();
+                                    $("#jsGrid").jsGrid("editItem", item);
+                                });
+
+                            var $deleteButton = $("<button>")
+                                .addClass("jsgrid-button")
+                                .append("<i class='fas fa-trash-alt'></i>")  // 刪除圖標
+                                .click(function(e) {
+                                    e.stopPropagation();
+                                    $("#jsGrid").jsGrid("deleteItem", item);
+                                });
+
+                            return $("<div>").append($editButton).append($deleteButton);
+                        },
+                        editTemplate: function(value, item) {
+                            // 當進入編輯模式時顯示保存和取消按鈕
+                            var $saveButton = $("<button>")
+                                .addClass("jsgrid-button jsgrid-button-confirm")
+                                .append("<i class='fas fa-check'></i>")  // 保存圖標
+                                .click(function(e) {
+                                    e.stopPropagation();
+                                    $("#jsGrid").jsGrid("updateItem", item);
+                                });
+
+                            var $cancelButton = $("<button>")
+                                .addClass("jsgrid-button jsgrid-button-cancel")
+                                .append("<i class='fas fa-times'></i>")  // 取消圖標
+                                .click(function(e) {
+                                    e.stopPropagation();
+                                    $("#jsGrid").jsGrid("cancelEdit");
+                                });
+
+                            return $("<div>").append($saveButton).append($cancelButton);
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
+    <script th:src="@{/assets/js/jsgrid/jsgrid.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</th:block>
 </html>

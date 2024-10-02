@@ -7,6 +7,8 @@
     <meta charset="UTF-8">
     <title th:text="${title}">默認標題</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <!-- Google font-->
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,400i,500,500i,700,700i&amp;display=swap"
           rel="stylesheet">
@@ -78,7 +80,19 @@
 <script th:src="@{/assets/js/datatable/datatables/select.bootstrap5.js}"></script>
 <script th:src="@{/assets/js/datatable/datatables/datatable.custom.js}"></script>
 <script th:src="@{/assets/js/swiper/swiper-bundle.min.js}"></script>
-<script th:src="@{/assets/js/dashboard_11.js}"></script>
+<script>
+    $(document).ready(function() {
+        var token = $("meta[name='_csrf']").attr("content");
+        var header = $("meta[name='_csrf_header']").attr("content");
+
+        $.ajaxSetup({
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader(header, token);
+            }
+        });
+    });
+
+</script>
 
 <!-- 額外腳本 -->
 <th:block th:replace="${scripts}"></th:block>
