@@ -53,29 +53,81 @@
             </div>
         </div>
     </div>
+    <!-- 详情对话框 -->
+    <!-- 詳細對話框 -->
+    <!-- 模態框 -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"> <!-- 模態框頭部 -->
+                    <h5 class="modal-title" id="detailsModalLabel">編輯打卡記錄</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body"> <!-- 模態框主體 -->
+                    <form id="detailsForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">使用者名稱</label>
+                            <input type="text" class="form-control" id="username" name="username" readonly required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="clockInTime" class="form-label">打卡時間</label>
+                            <input type="text" class="form-control" id="clockInTime" name="clockInTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="latitude" class="form-label">緯度</label>
+                            <input type="number" class="form-control" id="latitude" name="latitude" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="longitude" class="form-label">經度</label>
+                            <input type="number" class="form-control" id="longitude" name="longitude" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"> <!-- 模態框底部 -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveButton">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 </body>
 <!-- 將 scripts 放入 layout -->
 <th:block th:fragment="scripts">
+    <script th:src="@{/assets/js/jsgrid/jsgrid.min.js}"></script>
+    <script th:src="@{/assets/js/jquery.ui.min.js}"></script>
+    <script th:src="@{/assets/js/form-validation-custom.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- 主程式碼 -->
     <script>
         $(function () {
+            // 定義函數和變數
+            var selectedItem;
+            var isNewItem;
+
             // 初始化 jsGrid
             $("#jsGrid").jsGrid({
                 width: "100%",
                 height: "400px",
 
-                inserting: true, // 開啟新增功能
-                editing: true,   // 開啟編輯功能
-                sorting: true,   // 開啟排序功能
-                paging: true,    // 開啟分頁功能
+                inserting: false,
+                editing: false,  // 禁用內聯編輯
+                sorting: true,
+                paging: true,
 
-                autoload: true,  // 自動加載數據
-                pageSize: 10,    // 每頁顯示 10 條數據
+                autoload: true,
+                pageSize: 10,
                 pageButtonCount: 5,
 
-                deleteConfirm: "您確定要刪除此打卡紀錄嗎？",
+                deleteConfirm: "您確定要刪除此打卡記錄嗎？",
 
-                // 定義控制器
+                // 行點擊事件，彈出模態框
+                rowClick: function(args) {
+                    isNewItem = false;
+                    selectedItem = args.item;
+                    showDetailsModal("編輯打卡記錄", args.item);
+                },
+
                 controller: {
                     loadData: function() {
                         return $.ajax({
@@ -83,7 +135,7 @@
                             url: "/attendance/records",
                             dataType: "json"
                         }).then(function(response) {
-                            return response.data; // 使用返回數據中的 data 字段
+                            return response.data;
                         });
                     },
                     insertItem: function(item) {
@@ -109,7 +161,6 @@
                     }
                 },
 
-                // 定義表格的列
                 fields: [
                     { name: "username", type: "text", title: "使用者名稱", width: 150, validate: "required", editing: false },
                     {
@@ -120,85 +171,91 @@
                         validate: "required",
                         itemTemplate: function(value) {
                             return value ? new Date(value).toLocaleString() : "";
-                        },
-                        insertTemplate: function() {
-                            var $input = $("<input>").attr("type", "text").addClass("flatpickr-input");
-                            flatpickr($input[0], {
-                                enableTime: true,
-                                dateFormat: "Y-m-d H:i",
-                                time_24hr: true
-                            });
-                            this._insertPicker = $input;
-                            return $input;
-                        },
-                        editTemplate: function(value) {
-                            var $input = $("<input>").attr("type", "text").addClass("flatpickr-input");
-                            flatpickr($input[0], {
-                                enableTime: true,
-                                dateFormat: "Y-m-d H:i",
-                                time_24hr: true,
-                                defaultDate: new Date(value)
-                            });
-                            this._editPicker = $input;
-                            return $input;
-                        },
-                        insertValue: function() {
-                            return this._insertPicker.val();  // flatpickr 自動返回格式化的日期
-                        },
-                        editValue: function() {
-                            return this._editPicker.val();  // flatpickr 自動返回格式化的日期
                         }
                     },
                     { name: "latitude", type: "number", title: "緯度", width: 100, align: "center", editing: false },
                     { name: "longitude", type: "number", title: "經度", width: 100, align: "center", editing: false },
                     {
                         type: "control",
-                        itemTemplate: function(value, item) {
-                            // 使用 Font Awesome 圖標來作為按鈕
-                            var $editButton = $("<button>")
-                                .addClass("jsgrid-button")
-                                .append("<i class='fas fa-edit'></i>")  // 編輯圖標
-                                .click(function(e) {
-                                    e.stopPropagation();
-                                    $("#jsGrid").jsGrid("editItem", item);
+                        modeSwitchButton: false,
+                        editButton: false,
+                        headerTemplate: function() {
+                            // 使用 FontAwesome 的圖標按鈕來替換新增按鈕
+                            var $addButton = $("<a>")
+                                .attr("href", "#")
+                                .addClass("badge rounded-circle p-2 badge-success")
+                                .html('<i class="fas fa-plus"></i>')  // 使用 FontAwesome 的「加號」圖標
+                                .on("click", function () {
+                                    isNewItem = true;
+                                    selectedItem = {};
+                                    showDetailsModal("新增打卡記錄", {});
                                 });
-
-                            var $deleteButton = $("<button>")
-                                .addClass("jsgrid-button")
-                                .append("<i class='fas fa-trash-alt'></i>")  // 刪除圖標
-                                .click(function(e) {
-                                    e.stopPropagation();
-                                    $("#jsGrid").jsGrid("deleteItem", item);
-                                });
-
-                            return $("<div>").append($editButton).append($deleteButton);
-                        },
-                        editTemplate: function(value, item) {
-                            // 當進入編輯模式時顯示保存和取消按鈕
-                            var $saveButton = $("<button>")
-                                .addClass("jsgrid-button jsgrid-button-confirm")
-                                .append("<i class='fas fa-check'></i>")  // 保存圖標
-                                .click(function(e) {
-                                    e.stopPropagation();
-                                    $("#jsGrid").jsGrid("updateItem", item);
-                                });
-
-                            var $cancelButton = $("<button>")
-                                .addClass("jsgrid-button jsgrid-button-cancel")
-                                .append("<i class='fas fa-times'></i>")  // 取消圖標
-                                .click(function(e) {
-                                    e.stopPropagation();
-                                    $("#jsGrid").jsGrid("cancelEdit");
-                                });
-
-                            return $("<div>").append($saveButton).append($cancelButton);
+                            return $addButton;
                         }
                     }
                 ]
             });
+
+            // 顯示模態框的函數
+            function showDetailsModal(title, item) {
+                $("#detailsModalLabel").text(title);
+                $("#username").val(item.username || "").prop("readonly", !isNewItem);
+                $("#clockInTime").val(item.clockInTime || "");
+                $("#latitude").val(item.latitude || "").prop("readonly", true);
+                $("#longitude").val(item.longitude || "").prop("readonly", true);
+
+                // 初始化 flatpickr 日期選擇器
+                flatpickr("#clockInTime", {
+                    enableTime: true,
+                    dateFormat: "Y-m-d H:i",
+                    time_24hr: true,
+                    defaultDate: item.clockInTime || null
+                });
+
+                // 顯示模態框
+                var detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                detailsModal.show();
+            }
+
+            // 保存按鈕點擊事件
+            $("#saveButton").click(function() {
+                // 驗證表單
+                if (!$("#detailsForm")[0].checkValidity()) {
+                    $("#detailsForm")[0].reportValidity();
+                    return;
+                }
+
+                // 獲取表單數據
+                var updatedItem = {
+                    username: $("#username").val(),
+                    clockInTime: $("#clockInTime").val(),
+                    latitude: $("#latitude").val(),
+                    longitude: $("#longitude").val()
+                };
+
+                if (isNewItem) {
+                    $("#jsGrid").jsGrid("insertItem", updatedItem).done(function() {
+                        // 關閉模態框
+                        var detailsModalEl = document.getElementById('detailsModal');
+                        var detailsModal = bootstrap.Modal.getInstance(detailsModalEl);
+                        detailsModal.hide();
+                    });
+                } else {
+                    $.extend(selectedItem, updatedItem);
+                    $("#jsGrid").jsGrid("updateItem", selectedItem).done(function() {
+                        // 關閉模態框
+                        var detailsModalEl = document.getElementById('detailsModal');
+                        var detailsModal = bootstrap.Modal.getInstance(detailsModalEl);
+                        detailsModal.hide();
+                    });
+                }
+            });
+            // 取消按鈕的點擊事件已在模態框的關閉按鈕中處理，無需額外代碼
         });
     </script>
-    <script th:src="@{/assets/js/jsgrid/jsgrid.min.js}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 </th:block>
 </html>

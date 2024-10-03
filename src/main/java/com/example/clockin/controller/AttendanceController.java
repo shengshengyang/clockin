@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,13 +122,24 @@ public class AttendanceController {
     @ResponseBody
     public String updateAttendanceRecord(@RequestParam("id") Integer id,
                                          @RequestParam("clockInTime") String clockInTime) {
+        System.out.println("收到的打卡時間：" + clockInTime);  // 用於調試
+
         Optional<AttendanceRecord> recordOpt = attendanceRecordRepository.findById(id);
 
         if (recordOpt.isPresent()) {
             AttendanceRecord record = recordOpt.get();
-            record.setClockInTime(LocalDateTime.parse(clockInTime)); // 更新打卡時間
-            attendanceRecordRepository.save(record);
-            return "更新成功";
+
+            // 嘗試解析時間
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                LocalDateTime parsedTime = LocalDateTime.parse(clockInTime, formatter);
+
+                record.setClockInTime(parsedTime); // 更新打卡時間
+                attendanceRecordRepository.save(record);
+                return "更新成功";
+            } catch (DateTimeParseException e) {
+                return "日期時間格式錯誤: " + clockInTime;
+            }
         } else {
             return "記錄未找到";
         }
