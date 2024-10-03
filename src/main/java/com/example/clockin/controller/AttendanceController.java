@@ -2,6 +2,7 @@ package com.example.clockin.controller;
 
 import com.example.clockin.dto.ClockInRequest;
 import com.example.clockin.model.AttendanceRecord;
+import com.example.clockin.model.Shift;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
@@ -70,6 +72,7 @@ public class AttendanceController {
         }
     }
 
+    // 獲取所有考勤記錄
     @GetMapping("/records")
     @ResponseBody
     public Map<String, Object> getAttendanceRecords() {
@@ -81,8 +84,11 @@ public class AttendanceController {
             formattedRecord.put("id", record.getId());
             formattedRecord.put("username", record.getUser().getUsername());
             formattedRecord.put("clockInTime", record.getClockInTime().toString());
-            formattedRecord.put("latitude", record.getLatitude());
-            formattedRecord.put("longitude", record.getLongitude());
+
+            // 計算狀態
+            String status = calculateStatus(record);
+            formattedRecord.put("status", status);
+
             return formattedRecord;
         }).collect(Collectors.toList());
 
@@ -93,6 +99,25 @@ public class AttendanceController {
         response.put("data", formattedRecords);  // 返回的數據
 
         return response;
+    }
+
+    // 計算狀態的方法
+    private String calculateStatus(AttendanceRecord record) {
+        User user = record.getUser();
+        Shift shift = user.getShift();
+
+        if (shift == null) {
+            return "無班別";
+        }
+
+        LocalTime clockInTime = record.getClockInTime().toLocalTime();
+        LocalTime shiftStartTime = shift.getStartTime();
+
+        if (clockInTime.isBefore(shiftStartTime) || clockInTime.equals(shiftStartTime)) {
+            return "準時";
+        } else {
+            return "遲到";
+        }
     }
 
     // 新增打卡紀錄的 API
@@ -108,8 +133,6 @@ public class AttendanceController {
             AttendanceRecord record = new AttendanceRecord();
             record.setUser(user);
             record.setClockInTime(LocalDateTime.parse(clockInTime));
-            record.setLatitude(latitude);
-            record.setLongitude(longitude);
             attendanceRecordRepository.save(record);
             return "新增成功";
         } else {

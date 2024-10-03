@@ -26,11 +26,10 @@ CREATE TABLE attendance_records (
 );
 
 -- 插入打卡記錄範例資料
-INSERT INTO attendance_records (user_id, clock_in_time, latitude, longitude) VALUES
-                                                                                 (1, '2024-09-25 08:30:00', 25.033964, 121.564468),
-                                                                                 (1, '2024-09-26 08:32:00', 25.033980, 121.564480),
-                                                                                 (2, '2024-09-25 08:45:00', 25.034000, 121.564500);
-
+INSERT INTO attendance_records (user_id, clock_in_time) VALUES
+                                                            (1, '2024-09-25 08:30:00'),
+                                                            (1, '2024-09-26 08:32:00'),
+                                                            (2, '2024-09-25 14:05:00');
 -- 建立公司位置表（可選）
 CREATE TABLE company_locations (
                                    id INT AUTO_INCREMENT PRIMARY KEY,
@@ -42,3 +41,16 @@ CREATE TABLE company_locations (
 -- 插入公司位置範例資料
 INSERT INTO company_locations (name, latitude, longitude) VALUES
     ('公司總部', 25.033964, 121.564468);
+-- 建立班別表
+CREATE TABLE shifts (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        shift_name VARCHAR(100) NOT NULL,
+                        start_time TIME NOT NULL,
+                        end_time TIME NOT NULL
+);
+
+-- 插入班別範例資料
+INSERT INTO shifts (shift_name, start_time, end_time) VALUES
+                                                          ('早班', '09:00:00', '18:00:00'),
+                                                          ('中班', '14:00:00', '22:00:00'),
+                                                          ('晚班', '22:00:00', '06:00:00');

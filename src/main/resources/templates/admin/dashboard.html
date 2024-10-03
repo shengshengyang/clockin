@@ -56,6 +56,7 @@
     <!-- 详情对话框 -->
     <!-- 詳細對話框 -->
     <!-- 模態框 -->
+    <!-- 模態框 -->
     <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -73,14 +74,6 @@
                             <label for="clockInTime" class="form-label">打卡時間</label>
                             <input type="text" class="form-control" id="clockInTime" name="clockInTime" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="latitude" class="form-label">緯度</label>
-                            <input type="number" class="form-control" id="latitude" name="latitude" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="longitude" class="form-label">經度</label>
-                            <input type="number" class="form-control" id="longitude" name="longitude" readonly>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer"> <!-- 模態框底部 -->
@@ -90,6 +83,7 @@
             </div>
         </div>
     </div>
+
 </main>
 </body>
 <!-- 將 scripts 放入 layout -->
@@ -173,8 +167,31 @@
                             return value ? new Date(value).toLocaleString() : "";
                         }
                     },
-                    { name: "latitude", type: "number", title: "緯度", width: 100, align: "center", editing: false },
-                    { name: "longitude", type: "number", title: "經度", width: 100, align: "center", editing: false },
+                    {
+                        name: "status",
+                        title: "狀態",
+                        width: 100,
+                        align: "center",
+                        editing: false,
+                        itemTemplate: function(value) {
+                            // 使用 Bootstrap 的 pill 樣式來顯示狀態
+                            var $pill = $("<span>").addClass("badge rounded-pill");
+                            switch(value) {
+                                case "準時":
+                                    $pill.addClass("bg-success").text("準時");
+                                    break;
+                                case "遲到":
+                                    $pill.addClass("bg-warning text-dark").text("遲到");
+                                    break;
+                                case "未到":
+                                    $pill.addClass("bg-danger").text("未到");
+                                    break;
+                                default:
+                                    $pill.addClass("bg-secondary").text("未知");
+                            }
+                            return $pill;
+                        }
+                    },
                     {
                         type: "control",
                         modeSwitchButton: false,
@@ -201,8 +218,6 @@
                 $("#detailsModalLabel").text(title);
                 $("#username").val(item.username || "").prop("readonly", !isNewItem);
                 $("#clockInTime").val(item.clockInTime || "");
-                $("#latitude").val(item.latitude || "").prop("readonly", true);
-                $("#longitude").val(item.longitude || "").prop("readonly", true);
 
                 // 初始化 flatpickr 日期選擇器
                 flatpickr("#clockInTime", {
@@ -231,9 +246,7 @@
                 // 獲取表單數據
                 var updatedItem = {
                     username: $("#username").val(),
-                    clockInTime: $("#clockInTime").val(),
-                    latitude: $("#latitude").val(),
-                    longitude: $("#longitude").val()
+                    clockInTime: $("#clockInTime").val()
                 };
 
                 if (isNewItem) {
@@ -256,6 +269,7 @@
             // 取消按鈕的點擊事件已在模態框的關閉按鈕中處理，無需額外代碼
         });
     </script>
+
 
 </th:block>
 </html>
