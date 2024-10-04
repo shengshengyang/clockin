@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Integer> {
     List<AttendanceRecord> findByUserOrderByClockInTimeDesc(User user);
+
+    List<AttendanceRecord> findByUser(User user);
 }

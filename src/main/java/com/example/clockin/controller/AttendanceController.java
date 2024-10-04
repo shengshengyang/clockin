@@ -8,9 +8,12 @@ import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.AttendanceService;
 import com.example.clockin.util.DistanceUtil;
+import com.example.clockin.util.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -42,19 +45,18 @@ public class AttendanceController {
 
     @GetMapping("/clock-in")
     public String clockInPage(Model model, Principal principal) {
+        User user = UserUtil.getCurrentUser(userRepository);
         // 獲取公司的經緯度，傳遞給前端地圖顯示
         double companyLat = attendanceService.getCompanyLatitude();
         double companyLng = attendanceService.getCompanyLongitude();
         model.addAttribute("companyLat", companyLat);
         model.addAttribute("companyLng", companyLng);
-
-        // 獲取當前用戶的打卡記錄
-        String username = principal.getName();
-        List<AttendanceRecord> records = attendanceService.getAttendanceRecordsByUsername(username);
-        model.addAttribute("records", records);
+        model.addAttribute("user", user);
 
         return "clock-in";
     }
+
+
 
     @PostMapping("/clock-in")
     @ResponseBody
@@ -75,8 +77,21 @@ public class AttendanceController {
     // 獲取所有考勤記錄
     @GetMapping("/records")
     @ResponseBody
-    public Map<String, Object> getAttendanceRecords() {
-        List<AttendanceRecord> records = attendanceRecordRepository.findAll();
+    public Map<String, Object> getAttendanceRecords(Principal principal) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+        List<AttendanceRecord> records;
+        if (isAdmin) {
+            // 如果是管理員，獲取所有記錄
+            records = attendanceRecordRepository.findAll();
+        } else {
+            // 如果是普通用戶，僅獲取自己的記錄
+            String username = principal.getName();
+            User user = userRepository.findByUsername(username);
+            records = attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
+        }
 
         // 將嵌套的 user 對象展開，格式化數據
         List<Map<String, Object>> formattedRecords = records.stream().map(record -> {
@@ -100,6 +115,7 @@ public class AttendanceController {
 
         return response;
     }
+
 
     // 計算狀態的方法
     private String calculateStatus(AttendanceRecord record) {

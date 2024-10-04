@@ -8,34 +8,8 @@
 )">
 <!-- 將 links 放入 layout -->
 <th:block th:fragment="links">
-    <link rel="stylesheet" type="text/css" th:href="@{/assets/css/vendors/jsgrid.css}">
     <!-- 引入 flatpickr CSS 和 JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-    <style>
-        /* 自定義按鈕樣式 */
-        .jsgrid-button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            outline: none;
-            margin-right: 5px;
-        }
-        .jsgrid-button i {
-            font-size: 18px;
-            color: #555; /* 按鈕顏色 */
-        }
-        .jsgrid-button i:hover {
-            color: #000; /* 滑鼠懸停時變化顏色 */
-        }
-        /* 保存和取消按鈕樣式 */
-        .jsgrid-button-confirm {
-            color: green;
-        }
-        .jsgrid-button-cancel {
-            color: orange;
-        }
-    </style>
 </th:block>
 <body>
 <main>
@@ -53,18 +27,14 @@
             </div>
         </div>
     </div>
-    <!-- 详情对话框 -->
-    <!-- 詳細對話框 -->
-    <!-- 模態框 -->
-    <!-- 模態框 -->
     <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"> <!-- 模態框頭部 -->
+                <div class="modal-header">
                     <h5 class="modal-title" id="detailsModalLabel">編輯打卡記錄</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
                 </div>
-                <div class="modal-body"> <!-- 模態框主體 -->
+                <div class="modal-body">
                     <form id="detailsForm">
                         <div class="mb-3">
                             <label for="username" class="form-label">使用者名稱</label>
@@ -76,7 +46,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer"> <!-- 模態框底部 -->
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="button" class="btn btn-primary" id="saveButton">保存</button>
                 </div>
@@ -88,14 +58,10 @@
 </body>
 <!-- 將 scripts 放入 layout -->
 <th:block th:fragment="scripts">
-    <script th:src="@{/assets/js/jsgrid/jsgrid.min.js}"></script>
-    <script th:src="@{/assets/js/jquery.ui.min.js}"></script>
-    <script th:src="@{/assets/js/form-validation-custom.js}"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <!-- 主程式碼 -->
     <script>
         $(function () {
-            // 定義函數和變數
             var selectedItem;
             var isNewItem;
 
@@ -105,7 +71,7 @@
                 height: "400px",
 
                 inserting: false,
-                editing: false,  // 禁用內聯編輯
+                editing: false,
                 sorting: true,
                 paging: true,
 
@@ -115,7 +81,7 @@
 
                 deleteConfirm: "您確定要刪除此打卡記錄嗎？",
 
-                // 行點擊事件，彈出模態框
+                // 點擊彈窗
                 rowClick: function(args) {
                     isNewItem = false;
                     selectedItem = args.item;
@@ -208,6 +174,17 @@
                                     showDetailsModal("新增打卡記錄", {});
                                 });
                             return $addButton;
+                        },itemTemplate: function(_, item) {
+                            var $deleteButton = $("<a>")
+                                .attr("href", "#")
+                                .addClass("badge badge-danger p-2")
+                                .html('<i class="fas fa-trash-alt"></i>')  // FontAwesome 的「垃圾桶」圖標
+                                .on("click", function() {
+                                    if (confirm("您確定要刪除此打卡記錄嗎？")) {
+                                        $("#jsGrid").jsGrid("deleteItem", item);  // 調用 jsGrid 的刪除功能
+                                    }
+                                });
+                            return $("<div>").append($deleteButton);
                         }
                     }
                 ]

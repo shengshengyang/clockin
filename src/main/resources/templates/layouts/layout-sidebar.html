@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <title th:text="${title}">默認標題</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- CSRF-->
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <!-- Google font-->
@@ -38,6 +39,7 @@
     <link rel="stylesheet" type="text/css" th:href="@{/assets/css/fontawesome.css}">
     <link id="color" rel="stylesheet" th:href="@{/assets/css/color-1.css}" media="screen">
     <link rel="stylesheet" type="text/css" th:href="@{/assets/css/responsive.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/assets/css/vendors/jsgrid.css}">
 
     <!-- 額外css -->
     <th:block th:replace="${links}"></th:block>
@@ -80,6 +82,7 @@
 <script th:src="@{/assets/js/datatable/datatables/select.bootstrap5.js}"></script>
 <script th:src="@{/assets/js/datatable/datatables/datatable.custom.js}"></script>
 <script th:src="@{/assets/js/swiper/swiper-bundle.min.js}"></script>
+
 <script>
     $(document).ready(function() {
         var token = $("meta[name='_csrf']").attr("content");

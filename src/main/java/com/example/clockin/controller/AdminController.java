@@ -2,6 +2,7 @@ package com.example.clockin.controller;
 
 import com.example.clockin.model.User;
 import com.example.clockin.repo.UserRepository;
+import com.example.clockin.util.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,12 +19,8 @@ public class AdminController {
     UserRepository userRepository;
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // 獲取當前登入用戶的資訊
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
+        User user = UserUtil.getCurrentUser(userRepository);
         // 根據用戶名查詢更多資訊
-        User user = userRepository.findByUsername(username);
         model.addAttribute("user", user);
         return "admin/dashboard";
     }
