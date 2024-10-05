@@ -1,7 +1,9 @@
 package com.example.clockin.util;
 
+import com.example.clockin.model.MenuItem;
 import com.example.clockin.model.Shift;
 import com.example.clockin.model.User;
+import com.example.clockin.repo.MenuItemRepository;
 import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MenuItemRepository menuItemRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -65,6 +70,41 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail("admin@gmail.com");
             admin.setShift(afternoonShift);  // 分配中班
             userRepository.save(admin);
+        }
+
+        if (menuItemRepository.count() == 0) {
+            MenuItem admin = new MenuItem();
+            admin.setName("Admin");
+            admin.setUrl("#");
+            admin.setRole("ADMIN");
+            menuItemRepository.save(admin);
+
+            MenuItem adminDashboard = new MenuItem();
+            adminDashboard.setName("Admin Dashboard");
+            adminDashboard.setUrl("/admin/dashboard");
+            adminDashboard.setRole("ADMIN");
+            adminDashboard.setParent(admin);
+            menuItemRepository.save(adminDashboard);
+
+            MenuItem manageUsers = new MenuItem();
+            manageUsers.setName("Manage Users");
+            manageUsers.setUrl("/admin/manage-users");
+            manageUsers.setRole("ADMIN");
+            manageUsers.setParent(admin);
+            menuItemRepository.save(manageUsers);
+
+            MenuItem user = new MenuItem();
+            user.setName("User");
+            user.setUrl("#");
+            user.setRole("USER");
+            menuItemRepository.save(user);
+
+            MenuItem userClockIn = new MenuItem();
+            userClockIn.setName("User Clock In");
+            userClockIn.setUrl("/user/clockin");
+            userClockIn.setRole("USER");
+            userClockIn.setParent(user);
+            menuItemRepository.save(userClockIn);
         }
 
         System.out.println("Data initialization completed.");
