@@ -24,7 +24,7 @@
                         </div>
                     </li>
 
-                    <li th:each="menuItem : ${menuItems}" class="sidebar-list">
+                    <li th:each="menuItem : ${menuItems}" th:if="${menuItem.parent == null}" class="sidebar-list">
                         <a class="sidebar-link sidebar-title" th:href="${menuItem.url}">
                             <svg class="stroke-icon">
                                 <use th:href="@{/assets/svg/icon-sprite.svg#stroke-home}"></use>

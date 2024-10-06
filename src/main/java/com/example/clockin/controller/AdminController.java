@@ -6,12 +6,9 @@ import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.MenuItemService;
 import com.example.clockin.util.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,4 +33,33 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    @GetMapping("/menu/list/page")
+    public String listMenuItemsPage() {
+        return "admin/menu-list";
+    }
+
+    @GetMapping("/menu/list")
+    @ResponseBody
+    public List<MenuItem> listMenuItems() {
+        return menuItemService.getAllMenuItems();
+    }
+
+
+    @PostMapping("/menu/add")
+    public String addMenuItem(@ModelAttribute MenuItem menuItem) {
+        menuItemService.saveMenuItem(menuItem);
+        return "redirect:/admin/menu/list";
+    }
+
+    @PostMapping("/menu/edit")
+    public String editMenuItem(@ModelAttribute MenuItem menuItem) {
+        menuItemService.saveMenuItem(menuItem);
+        return "redirect:/admin/menu/list";
+    }
+
+    @GetMapping("/menu/delete/{id}")
+    public String deleteMenuItem(@PathVariable Integer id) {
+        menuItemService.deleteMenuItemById(id);
+        return "redirect:/admin/menu/list";
+    }
 }

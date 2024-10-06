@@ -21,4 +21,20 @@ public class MenuItemService {
         }
         return parentItems;
     }
+
+    public List<MenuItem> getAllMenuItems() {
+        return menuItemRepository.findAll();
+    }
+
+    public MenuItem getMenuItemById(Integer id) {
+        return menuItemRepository.findById(id).orElse(null);
+    }
+
+    public void saveMenuItem(MenuItem menuItem) {
+        menuItemRepository.save(menuItem);
+    }
+
+    public void deleteMenuItemById(Integer id) {
+        menuItemRepository.deleteById(id);
+    }
 }
