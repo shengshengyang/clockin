@@ -1,0 +1,163 @@
+<!-- admin/attendance-monitor.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="layouts/layout-sidebar :: layout(
+    content = ~{::main},
+    title = '個人資料',
+    links = ~{},
+    scripts = ~{}
+)">
+<body>
+<main>
+    <div class="container-fluid">
+        <div class="edit-profile">
+            <div class="row">
+                <div class="col-xl-4 col-sm-6 col-xxl-3 col-ed-4 box-col-4">
+                    <div class="card social-profile">
+                        <div class="card-body">
+                            <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Right Offcanvas</button>
+                            <div class="social-img-wrap">
+                                <div class="social-img"><img src="../assets/images/dashboard-5/profile.png" alt="profile"></div>
+                                <div class="edit-icon">
+                                    <svg>
+                                        <use href="../assets/svg/icon-sprite.svg#profile-check"></use>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="social-details">
+                                <h5 class="mb-1"><a href="social-app.html">Brooklyn Simmons</a></h5><span class="c-o-light">@brookly.simmons</span>
+                                <ul class="card-social">
+                                    <li><a href="https://www.facebook.com/" target="_blank"><i class="fa-brands fa-facebook-f"></i></a></li>
+                                    <li><a href="https://in.linkedin.com/" target="_blank"><i class="fa-brands fa-linkedin-in"></i></a></li>
+                                    <li><a href="https://twitter.com/" target="_blank"><i class="fa-brands fa-x-twitter"></i></a></li>
+                                    <li><a href="https://www.instagram.com/" target="_blank"><i class="fa-brands fa-instagram"></i></a></li>
+                                    <li><a href="https://rss.app/" target="_blank"><i class="fa-solid fa-rss"></i></a></li>
+                                </ul>
+                                <ul class="social-follow">
+                                    <li>
+                                        <h5 class="mb-0">1,908</h5><span class="c-o-light">Posts</span>
+                                    </li>
+                                    <li>
+                                        <h5 class="mb-0">34.0k</h5><span class="c-o-light">Followers</span>
+                                    </li>
+                                    <li>
+                                        <h5 class="mb-0">897</h5><span class="c-o-light">Following</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xxl-8 col-md-6 box-col-6">
+                    <div class="card">
+                        <div class="card-header card-no-border">
+                            <div class="header-top">
+                                <h5>打卡紀錄</h5>
+                                <div class="card-header-right-icon">
+                                    <div class="dropdown icon-dropdown">
+                                        <button class="btn dropdown-toggle" id="bestSeller" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-more-alt"></i></button>
+                                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="bestSeller"><a class="dropdown-item" href="#!">This Month</a><a class="dropdown-item" href="#!">Previous Month</a><a class="dropdown-item" href="#!">Last 3 Months</a><a class="dropdown-item" href="#!">Last 6 Months</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body px-0 pt-0">
+                            <div class="recent-table table-responsive custom-scrollbar attendance-table">
+                                <div id="attendance-overview_wrapper" class="dt-container dt-empty-footer"><div class="dt-layout-row"><div class="dt-layout-cell dt-start "></div><div class="dt-layout-cell dt-end "><div class="dt-search"><label for="dt-search-1">Search:</label><input type="search" class="dt-input" id="dt-search-1" placeholder="" aria-controls="attendance-overview"></div></div></div><div class="dt-layout-row dt-layout-table"><div class="dt-layout-cell "><table class="table dataTable" id="attendance-overview" aria-describedby="attendance-overview_info"><colgroup><col><col><col><col></colgroup>
+                                    <thead>
+                                    <tr role="row"><th data-dt-column="0" rowspan="1" colspan="1" class="dt-orderable-asc dt-orderable-desc dt-ordering-asc" aria-sort="ascending" aria-label="Employee Name: Activate to invert sorting" tabindex="0"><span class="dt-column-title" role="button">Employee Name</span><span class="dt-column-order"></span></th><th data-dt-column="1" rowspan="1" colspan="1" class="dt-orderable-asc dt-orderable-desc" aria-label="Designation: Activate to sort" tabindex="0"><span class="dt-column-title" role="button">Designation</span><span class="dt-column-order"></span></th><th data-dt-column="2" rowspan="1" colspan="1" class="dt-orderable-asc dt-orderable-desc" aria-label="Check In Time: Activate to sort" tabindex="0"><span class="dt-column-title" role="button">Check In Time</span><span class="dt-column-order"></span></th><th data-dt-column="3" rowspan="1" colspan="1" class="dt-orderable-asc dt-orderable-desc" aria-label="Status: Activate to sort" tabindex="0"><span class="dt-column-title" role="button">Status</span><span class="dt-column-order"></span></th></tr>
+                                    </thead>
+                                    <tbody><tr>
+                                        <td class="sorting_1"><a class="f-w-500" href="#!">Amelia Lee</a></td>
+                                        <td>Next Developer</td>
+                                        <td>11:48 AM</td>
+                                        <td> <span class="badge badge-light-danger">Late</span></td>
+                                    </tr><tr>
+                                        <td class="sorting_1"><a class="f-w-500" href="#!">Ava Garcia</a></td>
+                                        <td>JS Developer</td>
+                                        <td>10:04 AM</td>
+                                        <td> <span class="badge badge-light-success">On Time </span></td>
+                                    </tr><tr>
+                                        <td class="sorting_1"><a class="f-w-500" href="#!">Cole Brown</a></td>
+                                        <td>AI Developer</td>
+                                        <td>03.45 AM</td>
+                                        <td> <span class="badge badge-light-success">On Time</span></td>
+                                    </tr><tr>
+                                        <td class="sorting_1"><a class="f-w-500" href="#!">Daniel Moore</a></td>
+                                        <td>Python Developer</td>
+                                        <td>9:30 AM</td>
+                                        <td> <span class="badge badge-light-success">On Time</span></td>
+                                    </tr></tbody>
+                                    <tfoot></tfoot></table></div></div><div class="dt-layout-row"><div class="dt-layout-cell dt-start "><div class="dt-info" aria-live="polite" id="attendance-overview_info" role="status">Showing 1 to 4 of 8 entries</div></div><div class="dt-layout-cell dt-end "><div class="dt-paging paging_full_numbers"><button class="dt-paging-button disabled first" role="link" type="button" aria-controls="attendance-overview" aria-disabled="true" aria-label="First" data-dt-idx="first" tabindex="-1">«</button><button class="dt-paging-button disabled previous" role="link" type="button" aria-controls="attendance-overview" aria-disabled="true" aria-label="Previous" data-dt-idx="previous" tabindex="-1">‹</button><button class="dt-paging-button current" role="link" type="button" aria-controls="attendance-overview" aria-current="page" data-dt-idx="0" tabindex="0">1</button><button class="dt-paging-button" role="link" type="button" aria-controls="attendance-overview" data-dt-idx="1" tabindex="0">2</button><button class="dt-paging-button next" role="link" type="button" aria-controls="attendance-overview" aria-label="Next" data-dt-idx="next" tabindex="0">›</button><button class="dt-paging-button last" role="link" type="button" aria-controls="attendance-overview" aria-label="Last" data-dt-idx="last" tabindex="0">»</button></div></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas offcanvas-end" id="offcanvasRight" tabindex="-1" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header pb-0">
+            <h5 class="offcanvas-title" id="offcanvasRightLabel">Offcanvas End</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body custom-input custom-scrollbar">
+            <form class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="exampleFormControlInput1">Email</label>
+                    <input class="form-control" id="exampleFormControlInput1" type="email" placeholder="name@example.com">
+                </div>
+                <div class="col-12">
+                    <div class="card height-equal" style="min-height: 473.823px;">
+                        <div class="card-header">
+                            <h5>Single File Upload</h5>
+                            <p class="f-m-light mt-1">Use <code>dropzone </code> class through create upload files and with that we can upload single file by doing <code>singleFileUpload </code>id.</p>
+                        </div>
+                        <div class="card-body">
+                            <form class="dropzone dropzone-secondary dz-clickable" id="singleFileUpload" action="/upload.php">
+                                <div class="dropzone-wrapper">
+                                    <div class="dz-message needsclick"><i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
+                                        <h6>Drop files here or click to upload.</h6><span class="note needsclick">(This is just a demo dropzone. Selected files are <strong>not</strong> actually uploaded.)</span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="exampleFormControlInput2">Select Project</label>
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected="">Select your projects</option>
+                        <option value="1">Project1</option>
+                        <option value="2">Project2</option>
+                        <option value="3">Project3</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="exampleFormControlInput3">Project Counts</label>
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected="">How many projects do you make?</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="exampleFormControlTextarea1">External Notes</label>
+                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="4"></textarea>
+                </div>
+                <div class="col-12">
+                    <div class="form-check checkbox-checked">
+                        <input class="form-check-input" id="termsCondition5" type="checkbox" value="" required="">
+                        <label class="form-check-label" for="termsCondition5">Agree to terms and conditions</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-light me-2" type="submit" data-bs-dismiss="offcanvas" aria-label="Close">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>

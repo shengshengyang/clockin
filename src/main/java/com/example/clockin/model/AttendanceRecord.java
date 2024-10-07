@@ -1,7 +1,6 @@
 package com.example.clockin.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,15 +18,15 @@ public class AttendanceRecord {
     @Column(name = "clock_in_time", nullable = false)
     private LocalDateTime clockInTime;
 
-    @Column(nullable = false)
-    private Double latitude;
-
-    @Column(nullable = false)
-    private Double longitude;
+    // 新增一個字段來存儲狀態（不存入數據庫，由後端計算）
+    @Transient
+    private String status;
 
     // 無參構造函數
     public AttendanceRecord() {
     }
+
+    // Getters 和 Setters
 
     public Integer getId() {
         return id;
@@ -53,19 +52,11 @@ public class AttendanceRecord {
         this.clockInTime = clockInTime;
     }
 
-    public Double getLatitude() {
-        return latitude;
+    public String getStatus() {
+        return status;
     }
 
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

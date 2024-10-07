@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="layouts/layout-sidebar :: layout(
+    content = ~{::main},
+    title = '側邊欄管理',
+    links = ~{::links},
+    scripts = ~{::scripts}
+)">
+<!-- 將 links 放入 layout -->
+<th:block th:fragment="links">
+    <!-- 引入 flatpickr CSS 和 JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</th:block>
+<body>
+<main>
+    <div id="jsGrid"></div>
+</main>
+
+<th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $(function () {
+            var selectedItem;
+            var isNewItem;
+
+            // 初始化 jsGrid
+            $("#jsGrid").jsGrid({
+                width: "100%",
+                height: "400px",
+
+                inserting: true,
+                editing: true,
+                sorting: true,
+                paging: true,
+
+                autoload: true,
+                pageSize: 10,
+                pageButtonCount: 5,
+
+                deleteConfirm: "您確定要刪除此菜單項目嗎？",
+
+                controller: {
+                    loadData: function() {
+                        return $.ajax({
+                            type: "GET",
+                            url: "/admin/menu/list",
+                            dataType: "json"
+                        });
+                    },
+                    insertItem: function(item) {
+                        return $.ajax({
+                            type: "POST",
+                            url: "/admin/menu/add",
+                            data: item
+                        });
+                    },
+                    updateItem: function(item) {
+                        return $.ajax({
+                            type: "POST",
+                            url: "/admin/menu/edit",
+                            data: item
+                        });
+                    },
+                    deleteItem: function(item) {
+                        return $.ajax({
+                            type: "DELETE",
+                            url: "/admin/menu/delete/" + item.id
+                        });
+                    }
+                },
+
+                fields: [
+                    { name: "id", type: "number", width: 50, validate: "required" },
+                    { name: "name", type: "text", width: 150, validate: "required" },
+                    { name: "url", type: "text", width: 200, validate: "required" },
+                    { name: "role", type: "text", width: 100, validate: "required" },
+                    { name: "parentName", type: "text", width: 150, title: "Parent Menu" },
+                    { type: "control" }
+                ]
+
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

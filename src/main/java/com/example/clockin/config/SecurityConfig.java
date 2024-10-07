@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests((authorize) -> authorize.requestMatchers("/attendance/**")
                         .authenticated()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN")
+                        .requestMatchers("/user/**").hasAnyRole("USER","ADMIN")
                         .requestMatchers("/css/**", "/js/**", "/images/**","/assets/**")
                         .permitAll().anyRequest().permitAll())
                 .formLogin(form -> form
@@ -81,7 +83,12 @@ public class SecurityConfig {
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "POST"))
                         .logoutSuccessHandler(logoutSuccessHandler)
                         .permitAll()
-                ).csrf().disable();
+                ).exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    // 當未認證的用戶訪問受保護的頁面時重定向到登入頁面
+                    response.sendRedirect("/login");
+                })
+        );
         return http.build();
     }
 }

@@ -35,8 +35,6 @@ public class AttendanceService {
             User user = userRepository.findByUsername(username);
             AttendanceRecord record = new AttendanceRecord();
             record.setUser(user);
-            record.setLatitude(latitude);
-            record.setLongitude(longitude);
             record.setClockInTime(LocalDateTime.now());
             attendanceRecordRepository.save(record);
             return true;
