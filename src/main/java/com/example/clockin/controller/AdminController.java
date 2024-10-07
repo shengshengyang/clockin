@@ -22,26 +22,29 @@ public class AdminController {
     @Autowired
     private MenuItemService menuItemService;
 
+    @Autowired
+    private UserUtil util;
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        User user = UserUtil.getCurrentUser(userRepository);
-        // 根據用戶名查詢更多資訊
-        // 加載該用戶角色的菜單項
-        List<MenuItem> menuItems = menuItemService.getMenuItemsByRole(user.getRole());
-        model.addAttribute("menuItems", menuItems);
-        model.addAttribute("user", user);
+        util.addCommonAttributes(model);
         return "admin/dashboard";
     }
 
     @GetMapping("/menu/list/page")
-    public String listMenuItemsPage() {
+    public String listMenuItemsPage(Model model) {
+        util.addCommonAttributes(model);
+        User user = util.getCurrentUser();
+        List<MenuItem> menuItems = menuItemService.getMenuItemsByRole(user.getRole());
+        model.addAttribute("menuItems", menuItems);
         return "admin/menu-list";
     }
 
     @GetMapping("/menu/list")
     @ResponseBody
     public List<MenuItem> listMenuItems() {
-        return menuItemService.getAllMenuItems();
+        List<MenuItem> listMenuItems = menuItemService.getAllMenuItems();
+        return listMenuItems;
     }
 
 

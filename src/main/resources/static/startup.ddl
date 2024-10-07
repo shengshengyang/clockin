@@ -1,4 +1,4 @@
-use Attendance;
+use attendance_system;
 
 -- 建立用戶表
 CREATE TABLE users (
@@ -54,3 +54,5 @@ INSERT INTO shifts (shift_name, start_time, end_time) VALUES
                                                           ('早班', '09:00:00', '18:00:00'),
                                                           ('中班', '14:00:00', '22:00:00'),
                                                           ('晚班', '22:00:00', '06:00:00');
+
+INSERT INTO menu_items (name, url, role, parent_id) VALUES ('Menu List', '/admin/menu/list', 'ADMIN', 3);

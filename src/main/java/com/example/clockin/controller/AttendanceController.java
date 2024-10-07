@@ -42,10 +42,13 @@ public class AttendanceController {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    UserUtil util;
+
 
     @GetMapping("/clock-in")
     public String clockInPage(Model model, Principal principal) {
-        User user = UserUtil.getCurrentUser(userRepository);
+        User user = util.getCurrentUser();
         // 獲取公司的經緯度，傳遞給前端地圖顯示
         double companyLat = attendanceService.getCompanyLatitude();
         double companyLng = attendanceService.getCompanyLongitude();
