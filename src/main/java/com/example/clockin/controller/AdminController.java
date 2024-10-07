@@ -1,5 +1,6 @@
 package com.example.clockin.controller;
 
+import com.example.clockin.dto.MenuItemDTO;
 import com.example.clockin.model.MenuItem;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.UserRepository;
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -42,9 +44,9 @@ public class AdminController {
 
     @GetMapping("/menu/list")
     @ResponseBody
-    public List<MenuItem> listMenuItems() {
-        List<MenuItem> listMenuItems = menuItemService.getAllMenuItems();
-        return listMenuItems;
+    public List<MenuItemDTO> listMenuItems() {
+        List<MenuItem> menuItems = menuItemService.getAllMenuItems();
+        return menuItems.stream().map(MenuItemDTO::new).collect(Collectors.toList());
     }
 
 
