@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layouts/layout-no-header :: layout(
+          content = ~{::main},
+          title = '未授權頁面',
+          links = ~{},
+         scripts = ~{::scripts}
+      )}">
+<head>
+    <meta charset="UTF-8">
+    <title>未授權頁面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+<main>
+    <!-- tap on top starts-->
+    <div class="tap-top"><i data-feather="chevrons-up"></i></div>
+    <!-- tap on tap ends-->
+    <!-- page-wrapper Start-->
+    <div class="page-wrapper compact-wrapper" id="pageWrapper">
+        <!-- error-403 start-->
+        <div class="error-wrapper">
+            <div class="container">
+                <div class="error-heading">
+                    <h2 class="headline font-success" id="countdown">403</h2>
+                </div>
+                <img th:src="@{/assets/images/lord-of-the-rings-you-shall-not-pass.gif}" alt="">
+                <div class="col-md-8 offset-md-2">
+                    <p class="sub-content">如果你看到這，代表您沒有權限進入，請洽管理員開啟權限</p>
+                </div>
+                <div><a class="btn btn-success-gradien btn-lg" th:href="@{/login}">返回登入</a></div>
+            </div>
+        </div>
+        <!-- error-403 end-->
+    </div>
+</main>
+<th:block th:fragment="scripts">
+    <script>
+        // 倒數計時的初始值
+        let countdown = 403;
+
+        // 設定倒數計時的顯示和重定向
+        const countdownElement = document.getElementById('countdown');
+        const timer = setInterval(() => {
+            countdown -= 100;
+            countdownElement.textContent = countdown;
+
+            // 當倒數結束時，重定向到登入頁面
+            if (countdown <= 5) {
+                clearInterval(timer);
+                window.location.href = '/login'; // 替換為登入頁面的路徑
+            }
+        }, 1000); // 每秒執行一次
+    </script>
+</th:block>
+</body>
+</html>

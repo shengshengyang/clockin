@@ -84,10 +84,12 @@ public class SecurityConfig {
                         .logoutSuccessHandler(logoutSuccessHandler)
                         .permitAll()
                 ).exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    // 當未認證的用戶訪問受保護的頁面時重定向到登入頁面
-                    response.sendRedirect("/login");
-                })
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendRedirect("/login"); // 未認證的用戶重定向到登入頁
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.sendRedirect("/403"); // 無權限訪問重定向到 403 頁
+                        })
         );
         return http.build();
     }
