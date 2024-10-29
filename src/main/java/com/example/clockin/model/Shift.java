@@ -1,6 +1,6 @@
 package com.example.clockin.model;
+
 import jakarta.persistence.*;
-import java.time.LocalTime;
 import java.util.List;
 
 @Entity
@@ -14,19 +14,16 @@ public class Shift {
     @Column(name = "shift_name", nullable = false)
     private String shiftName;
 
-    @Column(name = "start_time", nullable = false)
-    private LocalTime startTime;
-
-    @Column(name = "end_time", nullable = false)
-    private LocalTime endTime;
+    // 與 ShiftPeriod 的一對多關係
+    @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ShiftPeriod> periods;
 
     // 與 User 的一對多關係
     @OneToMany(mappedBy = "shift")
     private List<User> users;
 
     // 無參構造函數
-    public Shift() {
-    }
+    public Shift() {}
 
     // Getters 和 Setters
 
@@ -46,20 +43,12 @@ public class Shift {
         this.shiftName = shiftName;
     }
 
-    public LocalTime getStartTime() {
-        return startTime;
+    public List<ShiftPeriod> getPeriods() {
+        return periods;
     }
 
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
+    public void setPeriods(List<ShiftPeriod> periods) {
+        this.periods = periods;
     }
 
     public List<User> getUsers() {
