@@ -1,6 +1,8 @@
 package com.example.clockin.controller;
 
+import com.example.clockin.model.Shift;
 import com.example.clockin.model.User;
+import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
 @Controller
@@ -22,6 +25,8 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    private ShiftRepository shiftRepository;
+
     // 顯示用戶個人資料頁面
     @GetMapping("/profile")
     public String profile(Model model) {
@@ -29,7 +34,14 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         User user = userRepository.findByUsername(username);
+        // 使用 Java DateTimeFormatter 格式化 createdAt
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+        String formattedCreatedAt = user.getCreatedAt().format(formatter);
+
+        Shift shift = user.getShift();
         model.addAttribute("user", user);
+        model.addAttribute("formattedCreatedAt", formattedCreatedAt);
+        model.addAttribute("shift", shift);
         return "user/profile";
     }
 
