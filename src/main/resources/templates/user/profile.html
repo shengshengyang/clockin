@@ -10,7 +10,6 @@
 <main>
     <div class="container-fluid">
         <div class="user-profile">
-
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card hovercard text-center">
@@ -18,7 +17,7 @@
                         <div class="user-image">
                             <!-- 用戶頭像 -->
                             <div class="avatar">
-                                <img th:alt="${user.name}" th:src="@{${user.avatar}}" />
+                                <img th:alt="${user.name}" th:src="'data:image/png;base64,' + ${user.avatar}"/>
                             </div>
                             <div class="icon-wrapper"><i class="icofont icofont-pencil-alt-5"></i></div>
                         </div>
@@ -35,7 +34,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ttl-info text-start">
-                                                <h6><i class="fa-solid fa-calendar-days"></i>&nbsp;&nbsp;&nbsp;加入時間</h6>
+                                                <h6><i class="fa-solid fa-calendar-days"></i>&nbsp;&nbsp;&nbsp;加入時間
+                                                </h6>
                                                 <!-- 動態顯示用戶創建日期 -->
                                                 <span th:text="${formattedCreatedAt}">02 January 1988</span>
 
@@ -46,7 +46,8 @@
                                 <div class="col-sm-12 col-xl-4 order-sm-0 order-xl-1">
                                     <div class="user-designation">
                                         <!-- 動態顯示用戶名稱和角色 -->
-                                        <div class="title"><a target="_blank" href="" th:text="${user.name}">William C. Jennings</a></div>
+                                        <div class="title"><a target="_blank" href="" th:text="${user.name}">William C.
+                                            Jennings</a></div>
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-xl-4 order-sm-2 order-xl-2">
@@ -59,8 +60,10 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ttl-info text-start">
-                                                <h6><i class="fa-solid fa-location-arrow"></i>&nbsp;&nbsp;&nbsp;角色</h6>
-                                                <span th:text="${user.role}"></span>
+                                                <h6><i class="fa-solid fa-location-arrow"></i>&nbsp;&nbsp;&nbsp;角色
+                                                </h6>
+                                                <span th:text="${user.role}"
+                                                      th:classappend="${user.role == 'ADMIN'} ? 'badge bg-danger' : 'badge bg-success'"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -71,7 +74,7 @@
                                 <div class="row">
                                     <div class="col-6 text-md-end border-right">
                                         <div class="follow-num counter" data-target="258690">258690</div>
-                                        <span>Follower</span>
+                                        <span>出勤異常數</span>
                                     </div>
                                     <div class="col-6 text-md-start">
                                         <div class="follow-num counter" data-target="659887">659887</div>
@@ -85,7 +88,92 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">編輯個人資料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm" enctype="multipart/form-data" th:action="@{/user/profile/update}" method="post">
+                        <div class="mb-3">
+                            <label for="userName" class="form-label">名稱</label>
+                            <input type="text" class="form-control" id="userName" name="name" th:value="${user.name}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="userEmail" name="email" th:value="${user.email}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userAvatar" class="form-label">頭像</label>
+                            <input type="file" class="form-control" id="userAvatar" name="avatar" accept="image/*">
+                            <div id="dropZone" class="drop-zone">拖放圖片到這裡</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
-<th:block th:fragment="scripts"></th:block>
+<th:block th:fragment="scripts">
+    <script>
+        document.querySelector('.icon-wrapper').addEventListener('click', function () {
+            var editProfileModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            editProfileModal.show();
+        });
+
+        document.getElementById('editProfileForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+            fetch('/user/profile/update', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('資料更新成功');
+                        location.reload();
+                    } else {
+                        alert('資料更新失敗');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        const dropZone = document.getElementById('dropZone');
+        const userAvatarInput = document.getElementById('userAvatar');
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                userAvatarInput.files = files;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64String = e.target.result.split(',')[1];
+                    userAvatarInput.setAttribute('data-base64', base64String);
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        });
+    </script>
+</th:block>
 </body>
 </html>

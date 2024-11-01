@@ -26,7 +26,7 @@ public class User {
     private String email;  // 新增 email 字段
 
     @Lob
-    @Column(name = "avatar", columnDefinition = "TEXT")  // 新增 avatar 字段，用於存儲 Base64 圖像
+    @Column(name = "avatar", columnDefinition = "LONGTEXT")  // 新增 avatar 字段，用於存儲 Base64 圖像
     private String avatar;
 
     @Column(nullable = false, length = 20)
