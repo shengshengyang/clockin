@@ -3,6 +3,7 @@ package com.example.clockin.controller;
 import com.example.clockin.dto.ClockInRequest;
 import com.example.clockin.model.AttendanceRecord;
 import com.example.clockin.model.Shift;
+import com.example.clockin.model.ShiftPeriod;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
@@ -125,18 +126,32 @@ public class AttendanceController {
         User user = record.getUser();
         Shift shift = user.getShift();
 
-        if (shift == null) {
+        if (shift == null || shift.getPeriods() == null || shift.getPeriods().isEmpty()) {
             return "無班別";
         }
 
         LocalTime clockInTime = record.getClockInTime().toLocalTime();
-        LocalTime shiftStartTime = shift.getStartTime();
 
-        if (clockInTime.isBefore(shiftStartTime) || clockInTime.equals(shiftStartTime)) {
-            return "準時";
-        } else {
-            return "遲到";
+        // 遍歷 Shift 的每個 ShiftPeriod 來判斷狀態
+        for (ShiftPeriod period : shift.getPeriods()) {
+            LocalTime periodStartTime = period.getStartTime();
+            LocalTime periodEndTime = period.getEndTime();
+
+            // 檢查打卡時間是否在班別段的範圍內
+            if (!clockInTime.isBefore(periodStartTime) && !clockInTime.isAfter(periodEndTime)) {
+                // 準時判斷
+                if (clockInTime.isBefore(periodStartTime.plusMinutes(period.getAllowedLateMinutes())) || clockInTime.equals(periodStartTime)) {
+                    return "準時";
+                }
+                // 遲到判斷
+                else if (clockInTime.isBefore(periodEndTime)) {
+                    return "遲到";
+                }
+            }
         }
+
+        // 若打卡時間不符合任何班別段則視為早退
+        return "早退";
     }
 
     // 新增打卡紀錄的 API
