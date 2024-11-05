@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="layouts/layout-sidebar :: layout(
+    content = ~{::main},
+    title = '用戶管理',
+    links = ~{::links},
+    scripts = ~{::scripts}
+)">
+<!-- 將 links 放入 layout -->
+<th:block th:fragment="links">
+</th:block>
+<body>
+<main>
+    <div id="jsGrid"></div>
+    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalLabel">編輯用戶</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用戶名</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">電子郵件</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">角色</label>
+                            <select class="form-control" id="role" name="role" required>
+                                <option value="ADMIN">Admin</option>
+                                <option value="USER">User</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shift" class="form-label">班別</label>
+                            <select class="form-control" id="shift" name="shift">
+                                <option value="">無</option>
+                                <option th:each="shift : ${shifts}" th:value="${shift.id}" th:text="${shift.shiftName}"></option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="shiftId" name="shiftId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveButton">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- 將 scripts 放入 layout -->
+<th:block th:fragment="scripts">
+    <!-- 引入 jQuery 和 jsGrid JS -->
+    <script>
+        $(function() {
+            var selectedItem;
+            var isNewItem;
+
+            $("#jsGrid").jsGrid({
+                width: "100%",
+                height: "400px",
+
+                inserting: false,
+                editing: false,
+                sorting: true,
+                paging: true,
+                autoload: true,
+
+                pageSize: 10,
+                pageButtonCount: 5,
+
+                deleteConfirm: "您確定要刪除此用戶嗎？",
+
+                rowClick: function(args) {
+                    isNewItem = false;
+                    selectedItem = args.item;
+                    showUserModal("編輯用戶", args.item);
+                },
+
+                controller: {
+                    loadData: function() {
+                        return $.ajax({
+                            type: "GET",
+                            url: "/admin/users",
+                            dataType: "json"
+                        });
+                    },
+                    insertItem: function(item) {
+                        return $.ajax({
+                            type: "POST",
+                            url: "/admin/users",
+                            data: JSON.stringify(item),
+                            contentType: "application/json"
+                        });
+                    },
+                    updateItem: function(item) {
+                        return $.ajax({
+                            type: "PUT",
+                            url: "/admin/users/" + item.id,
+                            data: JSON.stringify(item),
+                            contentType: "application/json"
+                        });
+                    },
+                    deleteItem: function(item) {
+                        return $.ajax({
+                            type: "DELETE",
+                            url: "/admin/users/" + item.id
+                        });
+                    }
+                },
+
+                fields: [
+                    { name: "id", type: "number", width: 50, readOnly: true },
+                    { name: "username", type: "text", width: 150 },
+                    { name: "email", type: "text", width: 200 },
+                    { name: "role", type: "text", width: 100 },
+                    { name: "shiftName", type: "text", width: 150, title: "Shift" },
+                    {
+                        type: "control",
+                        modeSwitchButton: false,
+                        editButton: false,
+                        headerTemplate: function() {
+                            var $addButton = $("<a>")
+                                .attr("href", "#")
+                                .addClass("badge rounded-circle p-2 badge-success")
+                                .html('<i class="fas fa-plus"></i>')
+                                .on("click", function () {
+                                    isNewItem = true;
+                                    selectedItem = {};
+                                    showUserModal("新增用戶", {});
+                                });
+                            return $addButton;
+                        },
+                        itemTemplate: function(_, item) {
+                            var $deleteButton = $("<a>")
+                                .attr("href", "#")
+                                .addClass("badge badge-danger p-2")
+                                .html('<i class="fas fa-trash-alt"></i>')
+                                .on("click", function(event) { // Add 'event' parameter
+                                    event.stopPropagation();   // Stop the event from bubbling up
+                                    if (confirm("您確定要刪除此用戶嗎？")) {
+                                        $("#jsGrid").jsGrid("deleteItem", item);
+                                    }
+                                });
+                            return $("<div>").append($deleteButton);
+                        }
+                    }
+                ]
+            });
+
+            function showUserModal(title, item) {
+                $("#userModalLabel").text(title);
+                $("#username").val(item.username || "");
+                $("#email").val(item.email || "");
+                $("#role").val(item.role || "USER");
+                $("#shift").val(item.shiftId || "");
+                $("#shiftId").val(item.shiftId || "");
+
+                var userModal = new bootstrap.Modal(document.getElementById('userModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                userModal.show();
+            }
+
+
+
+            $("#saveButton").click(function() {
+                if (!$("#userForm")[0].checkValidity()) {
+                    $("#userForm")[0].reportValidity();
+                    return;
+                }
+
+                var updatedItem = {
+                    username: $("#username").val(),
+                    email: $("#email").val(),
+                    role: $("#role").val(),
+                    shiftId: $("#shift").val() || null
+                };
+
+                if (isNewItem) {
+                    $("#jsGrid").jsGrid("insertItem", updatedItem).done(function() {
+                        var userModalEl = document.getElementById('userModal');
+                        var userModal = bootstrap.Modal.getInstance(userModalEl);
+                        userModal.hide();
+                    });
+                } else {
+                    $.extend(selectedItem, updatedItem);
+                    $("#jsGrid").jsGrid("updateItem", selectedItem).done(function() {
+                        var userModalEl = document.getElementById('userModal');
+                        var userModal = bootstrap.Modal.getInstance(userModalEl);
+                        userModal.hide();
+                    });
+                }
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>
