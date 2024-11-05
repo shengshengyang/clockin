@@ -7,6 +7,7 @@ import com.example.clockin.service.MenuItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -32,5 +33,10 @@ public class UserUtil {
         List<MenuItem> menuItems = menuItemService.getMenuItemsByRole(user.getRole());
         model.addAttribute("menuItems", menuItems);
         model.addAttribute("user", user);
+    }
+
+    // password encoder
+    public String encodePassword(String password) {
+        return new BCryptPasswordEncoder().encode(password);
     }
 }
