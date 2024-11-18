@@ -8,6 +8,8 @@ import com.example.clockin.repo.CompanyLocationRepository;
 import com.example.clockin.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,7 +26,7 @@ public class AttendanceService {
 
     private final double MAX_DISTANCE = 200;
 
-
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
     public boolean handleClockIn(String username, double latitude, double longitude) {
         double companyLat = getCompanyLatitude();
         double companyLng = getCompanyLongitude();
