@@ -25,7 +25,7 @@ public class KafkaConfig {
     @Bean
     public ProducerFactory<String, ClockInEvent> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        // 配置生产者属性
+        // 配置生產者屬性
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
@@ -36,7 +36,7 @@ public class KafkaConfig {
     @Bean
     public ProducerFactory<String, ClockInResult> replyProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        // 配置回复生产者属性
+        // 配置回覆生產者屬性
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
@@ -47,7 +47,7 @@ public class KafkaConfig {
     @Bean
     public ConsumerFactory<String, ClockInEvent> consumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        // 配置消费者属性
+        // 配置消費者屬性
         configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "attendance-group");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -60,7 +60,7 @@ public class KafkaConfig {
     @Bean
     public ConsumerFactory<String, ClockInResult> replyConsumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        // 配置回复消费者属性
+        // 配置回覆消費者屬性
         configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "reply-group");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -88,7 +88,7 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, ClockInEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
-        factory.setReplyTemplate(replyTemplate);  // 设置回复模板
+        factory.setReplyTemplate(replyTemplate);  // 設置回覆模板
         return factory;
     }
 

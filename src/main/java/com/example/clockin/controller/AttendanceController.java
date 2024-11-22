@@ -58,7 +58,6 @@ public class AttendanceController {
     private ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
 
 
-
     @GetMapping("/clock-in")
     public String clockInPage(Model model, Principal principal) {
         User user = util.getCurrentUser();
@@ -73,7 +72,6 @@ public class AttendanceController {
     }
 
 
-
     @PostMapping("/clock-in")
     @ResponseBody
     public String clockIn(@RequestBody Map<String, Double> location, Principal principal) throws Exception {
@@ -81,23 +79,22 @@ public class AttendanceController {
         double latitude = location.get("latitude");
         double longitude = location.get("longitude");
 
-        // 创建打卡事件
+        // 創建打卡事件
         ClockInEvent event = new ClockInEvent(username, latitude, longitude);
 
-        // 创建消息并设置回复主题
+        // 創建消息並設置回覆主題
         org.springframework.messaging.Message<ClockInEvent> message = MessageBuilder
                 .withPayload(event)
                 .setHeader(KafkaHeaders.TOPIC, "clock-in-request-topic")
                 .setHeader(KafkaHeaders.REPLY_TOPIC, "clock-in-response-topic")
                 .build();
 
-        // 发送请求并等待回复
+        // 發送請求並等待回覆
         RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
 
-        // 设置超时时间，避免无限等待
+        // 設置超時時間，避免無限等待
         org.springframework.messaging.Message<ClockInResult> response = (org.springframework.messaging.Message<ClockInResult>) future.get(10, TimeUnit.SECONDS);
         ClockInResult result = response.getPayload();
-
 
         return result.getMessage();
     }
