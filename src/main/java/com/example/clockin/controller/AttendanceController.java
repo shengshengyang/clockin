@@ -1,6 +1,7 @@
 package com.example.clockin.controller;
 
-import com.example.clockin.dto.ClockInRequest;
+import com.example.clockin.dto.ClockInEvent;
+import com.example.clockin.dto.ClockInResult;
 import com.example.clockin.model.AttendanceRecord;
 import com.example.clockin.model.Shift;
 import com.example.clockin.model.ShiftPeriod;
@@ -8,11 +9,14 @@ import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.AttendanceService;
-import com.example.clockin.util.DistanceUtil;
 import com.example.clockin.util.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
+import org.springframework.kafka.requestreply.RequestReplyFuture;
+import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -28,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller
@@ -46,6 +51,12 @@ public class AttendanceController {
     @Autowired
     UserUtil util;
 
+    @Autowired
+    private KafkaTemplate<String, ClockInEvent> kafkaTemplate;
+
+    @Autowired
+    private ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
+
 
     @GetMapping("/clock-in")
     public String clockInPage(Model model, Principal principal) {
@@ -61,21 +72,31 @@ public class AttendanceController {
     }
 
 
-
     @PostMapping("/clock-in")
     @ResponseBody
-    public String clockIn(@RequestBody Map<String, Double> location, Principal principal) {
+    public String clockIn(@RequestBody Map<String, Double> location, Principal principal) throws Exception {
         String username = principal.getName();
         double latitude = location.get("latitude");
         double longitude = location.get("longitude");
 
-        boolean success = attendanceService.handleClockIn(username, latitude, longitude);
+        // 創建打卡事件
+        ClockInEvent event = new ClockInEvent(username, latitude, longitude);
 
-        if (success) {
-            return "打卡成功";
-        } else {
-            return "打卡失敗，您不在允許的範圍內";
-        }
+        // 創建消息並設置回覆主題
+        org.springframework.messaging.Message<ClockInEvent> message = MessageBuilder
+                .withPayload(event)
+                .setHeader(KafkaHeaders.TOPIC, "clock-in-request-topic")
+                .setHeader(KafkaHeaders.REPLY_TOPIC, "clock-in-response-topic")
+                .build();
+
+        // 發送請求並等待回覆
+        RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
+
+        // 設置超時時間，避免無限等待
+        org.springframework.messaging.Message<ClockInResult> response = (org.springframework.messaging.Message<ClockInResult>) future.get(10, TimeUnit.SECONDS);
+        ClockInResult result = response.getPayload();
+
+        return result.getMessage();
     }
 
     // 獲取所有考勤記錄
