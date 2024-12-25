@@ -11,6 +11,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -28,7 +30,6 @@ public class ApiSecurityConfig {
         http
                 // 只攔截 /api/** 路徑 (必須符合此 matcher 才會進入此 FilterChain)
                 .securityMatcher("/api/**")
-
                 .authorizeHttpRequests(auth -> auth
                         // 如 /api/login, /api/register 不需帶 JWT
                         .requestMatchers("/api/login", "/api/register").permitAll()
@@ -39,11 +40,10 @@ public class ApiSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                // API 常用 RESTful 方式，通常也會關閉 CSRF
-                .csrf(AbstractHttpConfigurer::disable)
 
                 // 在 UsernamePasswordAuthenticationFilter 之前放置 JWT filter
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+        ;
 
         return http.build();
     }

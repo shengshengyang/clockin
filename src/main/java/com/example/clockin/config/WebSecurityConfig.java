@@ -13,7 +13,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 @Order(2)  // 排在 ApiSecurityConfig 後面
 public class WebSecurityConfig {
-
+    private static final String LOGIN_URL = "/login";
     private final CustomAuthenticationSuccessHandler successHandler;
     private final CustomLogoutSuccessHandler logoutSuccessHandler;
 
@@ -54,18 +54,17 @@ public class WebSecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 // 設定路徑與權限
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/attendance/**").authenticated()
+                        .requestMatchers("/attendance/**", "/user/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 // 表單登入
                 .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
+                        .loginPage(LOGIN_URL)
+                        .loginProcessingUrl(LOGIN_URL)
                         .successHandler(successHandler)
-                        .failureUrl("/login?error")
+                        .failureUrl(LOGIN_URL + "?error")
                         .permitAll()
                 )
                 // 登出
@@ -76,12 +75,8 @@ public class WebSecurityConfig {
                 )
                 // 異常處理 (未認證 / 無權限)
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendRedirect("/login");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendRedirect("/403");
-                        })
+                        .authenticationEntryPoint((request, response, authException) -> response.sendRedirect(LOGIN_URL))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> response.sendRedirect("/403"))
                 );
 
         return http.build();

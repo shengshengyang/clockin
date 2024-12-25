@@ -29,29 +29,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
+    private final JwtUtil jwtUtil;
+    private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
+    private final AttendanceRecordRepository attendanceRecordRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    private UserDetailsService userDetailsService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
-
-    @Autowired
-    private AttendanceRecordRepository attendanceRecordRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    public ApiController(AuthenticationManager authenticationManager,
+                         UserDetailsService userDetailsService,
+                         JwtUtil jwtUtil,
+                         ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate,
+                         AttendanceRecordRepository attendanceRecordRepository,
+                         UserRepository userRepository) {
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.jwtUtil = jwtUtil;
+        this.replyingKafkaTemplate = replyingKafkaTemplate;
+        this.attendanceRecordRepository = attendanceRecordRepository;
+        this.userRepository = userRepository;
+    }
 
     /**
      * 提供 /api/login 接口，
@@ -64,8 +68,7 @@ public class ApiController {
 
         // 1. 驗證使用者帳號與密碼
         //    這會由 Spring Security 裝置裡的 DaoAuthenticationProvider / UserDetailsService 等進行校驗
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password));
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
         // 2. 若驗證成功（沒拋出異常），可從 userDetailsService 取得使用者資料
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -75,6 +78,8 @@ public class ApiController {
 
         // 4. 回傳給前端
         Map<String, String> response = new HashMap<>();
+        response.put("username", userDetails.getUsername());
+        response.put("roles", userDetails.getAuthorities().toString());
         response.put("token", jwt);
         return response;
     }
@@ -135,14 +140,14 @@ public class ApiController {
         }
 
         // 格式化回傳資料
-        List<Map<String, Object>> formattedRecords = records.stream().map(record -> {
+       List<Map<String, Object>> formattedRecords = records.stream().map(attendanceRecord -> {
             Map<String, Object> formattedRecord = new HashMap<>();
-            formattedRecord.put("id", record.getId());
-            formattedRecord.put("username", record.getUser().getUsername());
-            formattedRecord.put("clockInTime", record.getClockInTime().toString());
-            formattedRecord.put("status", calculateStatus(record));
+            formattedRecord.put("id", attendanceRecord.getId());
+            formattedRecord.put("username", attendanceRecord.getUser().getUsername());
+            formattedRecord.put("clockInTime", attendanceRecord.getClockInTime().toString());
+            formattedRecord.put("status", calculateStatus(attendanceRecord));
             return formattedRecord;
-        }).collect(Collectors.toList());
+        }).toList();
 
         // 模擬分頁資訊
         Map<String, Object> response = new HashMap<>();
@@ -157,15 +162,15 @@ public class ApiController {
     /**
      * 計算狀態（準時、遲到、早退、無班別）
      */
-    private String calculateStatus(AttendanceRecord record) {
-        User user = record.getUser();
+    private String calculateStatus(AttendanceRecord attendanceRecord) {
+        User user = attendanceRecord.getUser();
         Shift shift = user.getShift();
 
         if (shift == null || shift.getPeriods() == null || shift.getPeriods().isEmpty()) {
             return "無班別";
         }
 
-        LocalTime clockInTime = record.getClockInTime().toLocalTime();
+        LocalTime clockInTime = attendanceRecord.getClockInTime().toLocalTime();
 
         // 逐段判斷
         for (ShiftPeriod period : shift.getPeriods()) {

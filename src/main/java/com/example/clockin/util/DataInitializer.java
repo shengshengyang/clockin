@@ -16,20 +16,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final ShiftRepository shiftRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final MenuItemRepository menuItemRepository;
+    private final ShiftPeriodRepository shiftPeriodRepository;
 
     @Autowired
-    private ShiftRepository shiftRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private MenuItemRepository menuItemRepository;
-
-    @Autowired
-    private ShiftPeriodRepository shiftPeriodRepository;
+    public DataInitializer(UserRepository userRepository,
+                           ShiftRepository shiftRepository,
+                           PasswordEncoder passwordEncoder,
+                           MenuItemRepository menuItemRepository,
+                           ShiftPeriodRepository shiftPeriodRepository) {
+        this.userRepository = userRepository;
+        this.shiftRepository = shiftRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.menuItemRepository = menuItemRepository;
+        this.shiftPeriodRepository = shiftPeriodRepository;
+    }
 
     @Override
     public void run(String... args) throws Exception {
@@ -132,10 +136,17 @@ public class DataInitializer implements CommandLineRunner {
 
             MenuItem manageUsers = new MenuItem();
             manageUsers.setName("Manage Users");
-            manageUsers.setUrl("/admin/manage-users");
+            manageUsers.setUrl("/admin/user-management");
             manageUsers.setRole("ADMIN");
             manageUsers.setParent(admin);
             menuItemRepository.save(manageUsers);
+
+            MenuItem menuItemList = new MenuItem();
+            menuItemList.setName("Menu Item List");
+            menuItemList.setUrl("/admin/menu/list/page");
+            menuItemList.setRole("ADMIN");
+            menuItemList.setParent(admin);
+            menuItemRepository.save(menuItemList);
 
             MenuItem user = new MenuItem();
             user.setName("User");

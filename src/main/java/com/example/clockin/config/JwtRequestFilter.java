@@ -1,6 +1,7 @@
 package com.example.clockin.config;
 
 import com.example.clockin.util.JwtUtil;
+import groovyjarjarantlr4.v4.runtime.misc.NotNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,10 +31,19 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain chain
+            @NotNull HttpServletRequest request,
+            @NotNull HttpServletResponse httpServletResponse,
+            @NotNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+        String path = request.getRequestURI();
+
+        // Skip JWT validation for specific endpoints
+        if ("/api/login".equals(path) || "/api/register".equals(path)) {
+            filterChain.doFilter(request, httpServletResponse);
+            return;
+        }
+
 
         final String authorizationHeader = request.getHeader("Authorization");
 
@@ -59,6 +69,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, httpServletResponse);
     }
 }
