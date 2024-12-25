@@ -36,6 +36,11 @@ public class ApiSecurityConfig {
                         // 其餘 /api/** 都要驗證
                         .anyRequest().authenticated()
                 )
+                // 關閉 CSRF (REST API 常見做法)
+                // 只忽略 /api/** 的 CSRF
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**")
+                )
                 // API 通常是「無狀態」，所以關閉 Session
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

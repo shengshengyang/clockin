@@ -61,8 +61,8 @@ public class CommonSecurityConfig {
     /**
      * 如果你有 JwtUtil 這類工具類，也可以集中在這裡
      */
-    @Bean
-    public JwtUtil jwtUtil() {
-        return new JwtUtil();
-    }
+//    @Bean
+//    public JwtUtil jwtUtil() {
+//        return new JwtUtil();
+//    }
 }
