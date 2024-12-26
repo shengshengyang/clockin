@@ -9,6 +9,8 @@ import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.util.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
@@ -32,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ApiController.class);
 
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
@@ -60,20 +64,21 @@ public class ApiController {
         String username = loginRequest.get("username");
         String password = loginRequest.get("password");
 
-        // 1. 驗證帳密 (若失敗拋出 BadCredentialsException)
+        logger.info("Login attempt for user: {}", username);
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
         );
 
-        // 2. 取得使用者資料 + 產生 JWT Token
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         String jwt = jwtUtil.generateToken(userDetails.getUsername());
 
-        // 3. 回傳 JSON
         Map<String, String> response = new HashMap<>();
         response.put("username", userDetails.getUsername());
         response.put("roles", userDetails.getAuthorities().toString());
         response.put("token", jwt);
+
+        logger.info("Login successful for user: {}", username);
 
         return ResponseEntity.ok(response);
     }
@@ -84,6 +89,8 @@ public class ApiController {
         double latitude = location.get("latitude");
         double longitude = location.get("longitude");
 
+        logger.info("Clock-in attempt for user: {} at location: ({}, {})", username, latitude, longitude);
+
         ClockInEvent event = new ClockInEvent(username, latitude, longitude);
 
         Message<ClockInEvent> message = MessageBuilder
@@ -93,10 +100,15 @@ public class ApiController {
                 .build();
 
         RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
-        Message<ClockInResult> response = (Message<ClockInResult>) future.get(10, TimeUnit.SECONDS);
-        ClockInResult result = response.getPayload();
+        Message<?> responseMessage = future.get(10, TimeUnit.SECONDS);
 
-        return result.getMessage();
+        if (responseMessage.getPayload() instanceof ClockInResult result) {
+            logger.info("Clock-in successful for user: {}", username);
+            return result.getMessage();
+        } else {
+            logger.error("Unexpected response type for user: {}", username);
+            throw new Exception("Unexpected response type");
+        }
     }
 
     @GetMapping("/records")
@@ -104,6 +116,8 @@ public class ApiController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+        logger.info("Fetching attendance records for user: {}", principal.getName());
 
         List<AttendanceRecord> records;
         if (isAdmin) {
@@ -128,6 +142,8 @@ public class ApiController {
         response.put("total", 1);
         response.put("records", formattedRecords.size());
         response.put("data", formattedRecords);
+
+        logger.info("Attendance records fetched for user: {}", principal.getName());
 
         return response;
     }

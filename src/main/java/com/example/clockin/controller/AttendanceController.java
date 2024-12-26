@@ -39,24 +39,26 @@ import java.util.stream.Collectors;
 @RequestMapping("/attendance")
 public class AttendanceController {
 
-    @Autowired
-    AttendanceService attendanceService;
+private final AttendanceService attendanceService;
+private final AttendanceRecordRepository attendanceRecordRepository;
+private final UserRepository userRepository;
+private final UserUtil util;
+private final KafkaTemplate<String, ClockInEvent> kafkaTemplate;
+private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
 
-    @Autowired
-    AttendanceRecordRepository attendanceRecordRepository;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    UserUtil util;
-
-    @Autowired
-    private KafkaTemplate<String, ClockInEvent> kafkaTemplate;
-
-    @Autowired
-    private ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
-
+public AttendanceController(AttendanceService attendanceService,
+                            AttendanceRecordRepository attendanceRecordRepository,
+                            UserRepository userRepository,
+                            UserUtil util,
+                            KafkaTemplate<String, ClockInEvent> kafkaTemplate,
+                            ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate) {
+    this.attendanceService = attendanceService;
+    this.attendanceRecordRepository = attendanceRecordRepository;
+    this.userRepository = userRepository;
+    this.util = util;
+    this.kafkaTemplate = kafkaTemplate;
+    this.replyingKafkaTemplate = replyingKafkaTemplate;
+}
 
     @GetMapping("/clock-in")
     public String clockInPage(Model model, Principal principal) {
@@ -130,7 +132,7 @@ public class AttendanceController {
             formattedRecord.put("status", status);
 
             return formattedRecord;
-        }).collect(Collectors.toList());
+        }).toList();
 
         Map<String, Object> response = new HashMap<>();
         response.put("page", 1);  // 假設只返回一頁
@@ -143,15 +145,15 @@ public class AttendanceController {
 
 
     // 計算狀態的方法
-    private String calculateStatus(AttendanceRecord record) {
-        User user = record.getUser();
+    private String calculateStatus(AttendanceRecord attendanceRecord) {
+        User user = attendanceRecord.getUser();
         Shift shift = user.getShift();
 
         if (shift == null || shift.getPeriods() == null || shift.getPeriods().isEmpty()) {
             return "無班別";
         }
 
-        LocalTime clockInTime = record.getClockInTime().toLocalTime();
+        LocalTime clockInTime = attendanceRecord.getClockInTime().toLocalTime();
 
         // 遍歷 Shift 的每個 ShiftPeriod 來判斷狀態
         for (ShiftPeriod period : shift.getPeriods()) {
@@ -185,10 +187,10 @@ public class AttendanceController {
         User user = userRepository.findByUsername(username);
 
         if (user != null) {
-            AttendanceRecord record = new AttendanceRecord();
-            record.setUser(user);
-            record.setClockInTime(LocalDateTime.parse(clockInTime));
-            attendanceRecordRepository.save(record);
+            AttendanceRecord attendanceRecord = new AttendanceRecord();
+            attendanceRecord.setUser(user);
+            attendanceRecord.setClockInTime(LocalDateTime.parse(clockInTime));
+            attendanceRecordRepository.save(attendanceRecord);
             return "新增成功";
         } else {
             return "用戶未找到";
@@ -205,15 +207,15 @@ public class AttendanceController {
         Optional<AttendanceRecord> recordOpt = attendanceRecordRepository.findById(id);
 
         if (recordOpt.isPresent()) {
-            AttendanceRecord record = recordOpt.get();
+            AttendanceRecord attendanceRecord = recordOpt.get();
 
             // 嘗試解析時間
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
                 LocalDateTime parsedTime = LocalDateTime.parse(clockInTime, formatter);
 
-                record.setClockInTime(parsedTime); // 更新打卡時間
-                attendanceRecordRepository.save(record);
+                attendanceRecord.setClockInTime(parsedTime); // 更新打卡時間
+                attendanceRecordRepository.save(attendanceRecord);
                 return "更新成功";
             } catch (DateTimeParseException e) {
                 return "日期時間格式錯誤: " + clockInTime;

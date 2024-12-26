@@ -9,6 +9,7 @@ import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.AdminService;
 import com.example.clockin.service.MenuItemService;
+import com.example.clockin.util.Constants;
 import com.example.clockin.util.UserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,21 +27,20 @@ import java.util.stream.Collectors;
 @RequestMapping("/admin")
 public class AdminController {
     private static final Logger logger = LogManager.getLogger(AdminController.class);
-    @Autowired
-    UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final MenuItemService menuItemService;
+    private final UserUtil util;
+    private final ShiftRepository shiftRepository;
+    private final AdminService adminService;
 
     @Autowired
-    private MenuItemService menuItemService;
-
-    @Autowired
-    private UserUtil util;
-
-    @Autowired
-    private ShiftRepository shiftRepository;
-
-    @Autowired
-    private AdminService adminService;
-
+    public AdminController(UserRepository userRepository, MenuItemService menuItemService, UserUtil util, ShiftRepository shiftRepository, AdminService adminService) {
+        this.userRepository = userRepository;
+        this.menuItemService = menuItemService;
+        this.util = util;
+        this.shiftRepository = shiftRepository;
+        this.adminService = adminService;
+    }
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -71,7 +71,7 @@ public class AdminController {
                 dto.setShiftName(user.getShift().getShiftName());
             }
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     // 新增用戶
@@ -146,7 +146,7 @@ public class AdminController {
     @ResponseBody
     public List<MenuItemDTO> listMenuItems() {
         List<MenuItem> menuItems = menuItemService.getAllMenuItems();
-        return menuItems.stream().map(MenuItemDTO::new).collect(Collectors.toList());
+        return menuItems.stream().map(MenuItemDTO::new).toList();
     }
 
 
@@ -154,20 +154,20 @@ public class AdminController {
     public String addMenuItem(@ModelAttribute MenuItem menuItem) {
         logger.info("Adding new menu item: {}", menuItem.getName());
         menuItemService.saveMenuItem(menuItem);
-        return "redirect:/admin/menu/list";
+        return Constants.REDIRECT_MENU_LIST;
     }
 
     @PostMapping("/menu/edit")
     public String editMenuItem(@ModelAttribute MenuItem menuItem) {
         logger.info("Editing menu item: {}", menuItem.getId());
         menuItemService.saveMenuItem(menuItem);
-        return "redirect:/admin/menu/list";
+        return Constants.REDIRECT_MENU_LIST;
     }
 
     @GetMapping("/menu/delete/{id}")
     public String deleteMenuItem(@PathVariable Integer id) {
         logger.info("Deleting menu item with ID: {}", id);
         menuItemService.deleteMenuItemById(id);
-        return "redirect:/admin/menu/list";
+        return Constants.REDIRECT_MENU_LIST;
     }
 }
