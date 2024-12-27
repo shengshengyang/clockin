@@ -1,0 +1,20 @@
+### Login Request
+POST http://localhost:8081/api/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password2"
+}
+
+
+### Clock In Request
+@jwt = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTczNTE3NzUyMSwiaWF0IjoxNzM1MTQxNTIxfQ.GqrPWTAl1bGHBY8PrnWvsR2bokoSef_SFgO2gP7u34Q
+POST http://localhost:8081/api/clock-in
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+{
+  "latitude": 24.181269,
+  "longitude": 120.715407
+}
