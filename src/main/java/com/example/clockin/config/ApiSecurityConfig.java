@@ -1,5 +1,6 @@
 package com.example.clockin.config;
 
+import com.example.clockin.util.Constants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -9,9 +10,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @EnableMethodSecurity
 @Order(1)  // 設定優先處理此組 FilterChain
 public class ApiSecurityConfig {
@@ -28,10 +33,8 @@ public class ApiSecurityConfig {
                 // 只攔截 /api/** 路徑 (必須符合此 matcher 才會進入此 FilterChain)
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth
-                        // 如 /api/login, /api/register 不需帶 JWT
                         .requestMatchers("/api/login", "/api/register").permitAll()
-                        // 其餘 /api/** 都要驗證
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // 其他 /api/** 路徑需要認證
                 )
                 // 關閉 CSRF (REST API 常見做法)
                 // 只忽略 /api/** 的 CSRF
@@ -42,11 +45,24 @@ public class ApiSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 在 UsernamePasswordAuthenticationFilter 之前放置 JWT filter
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
         ;
 
         return http.build();
     }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(Constants.LOCAL_FRONT_HOST)); // 允許的來源
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE")); // 允許的 HTTP 方法
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type")); // 允許的請求頭
+        configuration.setAllowCredentials(true); // 是否允許攜帶 Cookie 或憑證
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration); // 將配置應用於 /api/** 路徑
+        return source;
+    }
+
 }

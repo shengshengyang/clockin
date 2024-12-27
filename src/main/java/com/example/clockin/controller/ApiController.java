@@ -111,42 +111,42 @@ public class ApiController {
         }
     }
 
-    @GetMapping("/records")
-    public Map<String, Object> getAttendanceRecords(Principal principal) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+@GetMapping("/records")
+public ResponseEntity<Map<String, Object>> getAttendanceRecords(Principal principal) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    boolean isAdmin = authentication.getAuthorities().stream()
+            .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
-        logger.info("Fetching attendance records for user: {}", principal.getName());
+    logger.info("Fetching attendance records for user: {}", principal.getName());
 
-        List<AttendanceRecord> records;
-        if (isAdmin) {
-            records = attendanceRecordRepository.findAll();
-        } else {
-            String username = principal.getName();
-            User user = userRepository.findByUsername(username);
-            records = attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
-        }
-
-        List<Map<String, Object>> formattedRecords = records.stream().map(ar -> {
-            Map<String, Object> fm = new HashMap<>();
-            fm.put("id", ar.getId());
-            fm.put("username", ar.getUser().getUsername());
-            fm.put("clockInTime", ar.getClockInTime().toString());
-            fm.put("status", calculateStatus(ar));
-            return fm;
-        }).toList();
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("page", 1);
-        response.put("total", 1);
-        response.put("records", formattedRecords.size());
-        response.put("data", formattedRecords);
-
-        logger.info("Attendance records fetched for user: {}", principal.getName());
-
-        return response;
+    List<AttendanceRecord> records;
+    if (isAdmin) {
+        records = attendanceRecordRepository.findAll();
+    } else {
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username);
+        records = attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
     }
+
+    List<Map<String, Object>> formattedRecords = records.stream().map(ar -> {
+        Map<String, Object> fm = new HashMap<>();
+        fm.put("id", ar.getId());
+        fm.put("username", ar.getUser().getUsername());
+        fm.put("clockInTime", ar.getClockInTime().toString());
+        fm.put("status", calculateStatus(ar));
+        return fm;
+    }).toList();
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("page", 1);
+    response.put("total", 1);
+    response.put("records", formattedRecords.size());
+    response.put("data", formattedRecords);
+
+    logger.info("Attendance records fetched for user: {}", principal.getName());
+
+    return ResponseEntity.ok().body(response);
+}
 
     private String calculateStatus(AttendanceRecord ar) {
         User user = ar.getUser();
