@@ -2,6 +2,7 @@ package com.example.clockin.controller;
 
 import com.example.clockin.dto.ClockInEvent;
 import com.example.clockin.dto.ClockInResult;
+import com.example.clockin.dto.LoginRequest;
 import com.example.clockin.dto.UserDTO;
 import com.example.clockin.exception.ApiException;
 import com.example.clockin.exception.SysCode;
@@ -10,7 +11,9 @@ import com.example.clockin.model.Shift;
 import com.example.clockin.model.ShiftPeriod;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
+import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
+import com.example.clockin.service.LoginService;
 import com.example.clockin.util.JwtUtil;
 import com.example.clockin.util.UserUtil;
 import org.slf4j.Logger;
@@ -43,51 +46,28 @@ public class ApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiController.class);
 
-    private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
-    private final JwtUtil jwtUtil;
     private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final UserRepository userRepository;
     private final UserUtil userUtil;
+    private final LoginService loginService;
+    private final ShiftRepository shiftRepository;
 
     @Autowired
-    public ApiController(AuthenticationManager authenticationManager,
-                         UserDetailsService userDetailsService,
-                         JwtUtil jwtUtil,
-                         ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate,
+    public ApiController(ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate,
                          AttendanceRecordRepository attendanceRecordRepository,
-                         UserRepository userRepository, UserUtil userUtil) {
-        this.authenticationManager = authenticationManager;
-        this.userDetailsService = userDetailsService;
-        this.jwtUtil = jwtUtil;
+                         UserRepository userRepository, UserUtil userUtil, LoginService loginService, ShiftRepository shiftRepository) {
         this.replyingKafkaTemplate = replyingKafkaTemplate;
         this.attendanceRecordRepository = attendanceRecordRepository;
         this.userRepository = userRepository;
         this.userUtil = userUtil;
+        this.loginService = loginService;
+        this.shiftRepository = shiftRepository;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> loginRequest) {
-        String username = loginRequest.get("username");
-        String password = loginRequest.get("password");
-
-        logger.info("Login attempt for user: {}", username);
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        String jwt = jwtUtil.generateToken(userDetails.getUsername());
-
-        Map<String, String> response = new HashMap<>();
-        response.put("username", userDetails.getUsername());
-        response.put("roles", userDetails.getAuthorities().toString());
-        response.put("token", jwt);
-
-        logger.info("Login successful for user: {}", username);
-
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
+        Map<String, String> response = loginService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
 
@@ -95,7 +75,33 @@ public class ApiController {
     @GetMapping("/user")
     public ResponseEntity<Map<String, Object>> getUser(@RequestHeader("Authorization") String token) {
         Map<String, Object> response = new HashMap<>();
-        response.put("user", userUtil.getCurrentUser(token).orElseThrow(() -> new ApiException(SysCode.USER_NOT_FOUND)));
+        User user = userUtil.getCurrentUser(token).orElseThrow(() -> new ApiException(SysCode.USER_NOT_FOUND));
+        response.put("user", userUtil.convertToDTO(user));
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/user")
+    public ResponseEntity<Map<String, Object>> updateUser(@RequestHeader("Authorization") String token,
+                                                          @RequestBody UserDTO userDTO) {
+        User user = userUtil.getCurrentUser(token).orElseThrow(() -> new ApiException(SysCode.USER_NOT_FOUND));
+
+        // Update user fields from UserDTO
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        user.setName(userDTO.getUsername()); // Assuming name is the same as username
+        if (userDTO.getShiftId() != null) {
+            Shift shift = shiftRepository.findById(userDTO.getShiftId())
+                    .orElseThrow(() -> new ApiException(SysCode.SHIFT_NOT_FOUND));
+            user.setShift(shift);
+        }
+
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new ApiException(SysCode.UPDATE_FAILED, "Failed to update user", e);
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("user", userUtil.convertToDTO(user));
         return ResponseEntity.ok(response);
     }
 
