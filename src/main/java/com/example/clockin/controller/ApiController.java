@@ -1,9 +1,6 @@
 package com.example.clockin.controller;
 
-import com.example.clockin.dto.ClockInEvent;
-import com.example.clockin.dto.ClockInResult;
-import com.example.clockin.dto.LoginRequest;
-import com.example.clockin.dto.UserDTO;
+import com.example.clockin.dto.*;
 import com.example.clockin.exception.ApiException;
 import com.example.clockin.exception.SysCode;
 import com.example.clockin.model.AttendanceRecord;
@@ -14,10 +11,12 @@ import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.LoginService;
+import com.example.clockin.service.MailService;
 import com.example.clockin.util.UserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
@@ -50,17 +49,22 @@ public class ApiController {
     private final UserUtil userUtil;
     private final LoginService loginService;
     private final ShiftRepository shiftRepository;
+    private final Random random = new Random();
+    private final MailService mailService;
+    @Value("${front.end.url}")
+    private String frontEndUrl;
 
     @Autowired
     public ApiController(ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate,
                          AttendanceRecordRepository attendanceRecordRepository,
-                         UserRepository userRepository, UserUtil userUtil, LoginService loginService, ShiftRepository shiftRepository) {
+                         UserRepository userRepository, UserUtil userUtil, LoginService loginService, ShiftRepository shiftRepository, MailService mailService) {
         this.replyingKafkaTemplate = replyingKafkaTemplate;
         this.attendanceRecordRepository = attendanceRecordRepository;
         this.userRepository = userRepository;
         this.userUtil = userUtil;
         this.loginService = loginService;
         this.shiftRepository = shiftRepository;
+        this.mailService = mailService;
     }
 
     @PostMapping("/login")
@@ -208,6 +212,42 @@ public class ApiController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        if (email == null || email.isEmpty()) {
+            throw new ApiException(SysCode.MISSING_PARAMETER, "Email parameter is missing", null);
+        }
+        logger.info("Forgot password request for email: {}", email);
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            logger.error("User not found for email: {}", email);
+            throw new ApiException(SysCode.USER_NOT_FOUND, "User not found");
+        }
+
+        // Generate a reset code
+        String resetCode = generateResetCode();
+
+        // Send email with password reset code
+        sendResetEmail(email, resetCode);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password reset code sent to email");
+        return ResponseEntity.ok(response);
+    }
+
+    private String generateResetCode() {
+        // Generate a 6-digit reset code
+        return String.format("%06d", random.nextInt(999999));
+    }
+
+    private void sendResetEmail(String email, String resetCode) {
+        String resetPasswordLink = frontEndUrl + "/reset-password?email=" + email + "&code=" + resetCode;
+        Collection<String> receivers = Collections.singletonList(email);
+        mailService.sendEmail(EmailType.PASSWORD_RESET, receivers, resetPasswordLink);
+    }
+
     private String calculateStatus(AttendanceRecord ar) {
         User user = ar.getUser();
         Shift shift = user.getShift();
@@ -230,4 +270,6 @@ public class ApiController {
         }
         return "早退";
     }
+
+
 }

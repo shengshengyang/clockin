@@ -2,7 +2,6 @@ package com.example.clockin.config;
 
 import com.example.clockin.model.User;
 import com.example.clockin.repo.UserRepository;
-import com.example.clockin.util.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -57,12 +56,4 @@ public class CommonSecurityConfig {
     ) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-    /**
-     * 如果你有 JwtUtil 這類工具類，也可以集中在這裡
-     */
-//    @Bean
-//    public JwtUtil jwtUtil() {
-//        return new JwtUtil();
-//    }
 }
