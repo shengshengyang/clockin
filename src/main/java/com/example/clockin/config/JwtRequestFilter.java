@@ -60,7 +60,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 jwt = authorizationHeader.substring(7);
                 username = jwtUtil.extractUsername(jwt);
-                logger.info("Validating JWT for user: {}", username);
             }
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

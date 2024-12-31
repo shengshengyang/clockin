@@ -14,7 +14,6 @@ import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.LoginService;
-import com.example.clockin.util.JwtUtil;
 import com.example.clockin.util.UserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,16 +24,15 @@ import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -136,22 +134,61 @@ public class ApiController {
     }
 
     @GetMapping("/records")
-    public ResponseEntity<Map<String, Object>> getAttendanceRecords(Principal principal) {
+    public ResponseEntity<Map<String, Object>> getAttendanceRecords(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            Principal principal
+    ) {
+        // 1. 解析使用者權限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
         logger.info("Fetching attendance records for user: {}", principal.getName());
 
-        List<AttendanceRecord> records;
-        if (isAdmin) {
-            records = attendanceRecordRepository.findAll();
-        } else {
-            String username = principal.getName();
-            User user = userRepository.findByUsername(username);
-            records = attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
+        // 2. 將 startDate, endDate 字串轉換為 LocalDateTime
+        // 如果沒傳值，就預設抓所有資料；若需要更複雜的預設值，可自行調整
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+        try {
+            if (startDate != null && !startDate.isEmpty()) {
+                // 將日期字串 "2023-01-01" 轉為當日 00:00:00
+                startDateTime = LocalDate.parse(startDate).atStartOfDay();
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                // 將日期字串 "2023-01-02" 轉為同日 23:59:59
+                LocalDate parsedEnd = LocalDate.parse(endDate);
+                endDateTime = parsedEnd.atTime(LocalTime.of(23, 59, 59));
+            }
+        } catch (DateTimeParseException e) {
+            logger.error("Date parse error: {}", e.getMessage());
+            // 也可以拋錯給前端知悉
         }
 
+        // 3. 依照是否為管理員，帶入不同的查詢條件
+        List<AttendanceRecord> records;
+        if (isAdmin) {
+            if (startDateTime != null && endDateTime != null) {
+                // 管理員查詢所有使用者，並且時間範圍限定
+                records = attendanceRecordRepository.findAllByClockInTimeBetween(startDateTime, endDateTime);
+            } else {
+                // 沒有傳遞時間，就查全部
+                records = attendanceRecordRepository.findAll();
+            }
+        } else {
+            // 一般使用者
+            String username = principal.getName();
+            User user = userRepository.findByUsername(username);
+            if (startDateTime != null && endDateTime != null) {
+                records = attendanceRecordRepository.findByUserAndClockInTimeBetweenOrderByClockInTimeDesc(
+                        user, startDateTime, endDateTime
+                );
+            } else {
+                records = attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
+            }
+        }
+
+        // 4. 格式化查詢結果
         List<Map<String, Object>> formattedRecords = records.stream().map(ar -> {
             Map<String, Object> fm = new HashMap<>();
             fm.put("id", ar.getId());
@@ -168,8 +205,7 @@ public class ApiController {
         response.put("data", formattedRecords);
 
         logger.info("Attendance records fetched for user: {}", principal.getName());
-
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok(response);
     }
 
     private String calculateStatus(AttendanceRecord ar) {
