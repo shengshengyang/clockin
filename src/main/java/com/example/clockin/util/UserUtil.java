@@ -33,12 +33,12 @@ public class UserUtil {
         return userRepository.findByUsername(username);
     }
 
-    public Optional<UserDTO> getCurrentUser(String token) {
+    public Optional<User> getCurrentUser(String token) {
         String jwt = token.substring(7); // Remove "Bearer " prefix
         String username = jwtUtil.extractUsername(jwt);
         User user = userRepository.findByUsername(username);
 
-        return Optional.of(convertToDTO(user));
+        return Optional.ofNullable(user);
     }
 
     public void addCommonAttributes(Model model) {
@@ -53,15 +53,17 @@ public class UserUtil {
         return new BCryptPasswordEncoder().encode(password);
     }
 
-    private UserDTO convertToDTO(User user) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setUsername(user.getUsername());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setRole(user.getRole());
-        userDTO.setShiftId(user.getShift() != null ? user.getShift().getId() : null);
-        userDTO.setShiftName(user.getShift() != null ? user.getShift().getShiftName() : null);
-        return userDTO;
+   public UserDTO convertToDTO(User user) {
+    if (user == null) {
+        return null;
     }
-
+    UserDTO userDTO = new UserDTO();
+    userDTO.setId(user.getId());
+    userDTO.setUsername(user.getUsername());
+    userDTO.setEmail(user.getEmail());
+    userDTO.setRole(user.getRole());
+    userDTO.setShiftId(user.getShift() != null ? user.getShift().getId() : null);
+    userDTO.setShiftName(user.getShift() != null ? user.getShift().getShiftName() : null);
+    return userDTO;
+}
 }

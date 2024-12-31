@@ -43,20 +43,17 @@ private final AttendanceService attendanceService;
 private final AttendanceRecordRepository attendanceRecordRepository;
 private final UserRepository userRepository;
 private final UserUtil util;
-private final KafkaTemplate<String, ClockInEvent> kafkaTemplate;
 private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
 
 public AttendanceController(AttendanceService attendanceService,
                             AttendanceRecordRepository attendanceRecordRepository,
                             UserRepository userRepository,
                             UserUtil util,
-                            KafkaTemplate<String, ClockInEvent> kafkaTemplate,
                             ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate) {
     this.attendanceService = attendanceService;
     this.attendanceRecordRepository = attendanceRecordRepository;
     this.userRepository = userRepository;
     this.util = util;
-    this.kafkaTemplate = kafkaTemplate;
     this.replyingKafkaTemplate = replyingKafkaTemplate;
 }
 

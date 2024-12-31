@@ -33,7 +33,7 @@ public class ApiSecurityConfig {
                 // 只攔截 /api/** 路徑 (必須符合此 matcher 才會進入此 FilterChain)
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login", "/api/register").permitAll()
+                        .requestMatchers("/api/login", "/api/register","api/forgot-password").permitAll()
                         .anyRequest().authenticated() // 其他 /api/** 路徑需要認證
                 )
                 // 關閉 CSRF (REST API 常見做法)
