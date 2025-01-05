@@ -2,10 +2,10 @@ package com.example.clockin.service;
 
 import com.example.clockin.dto.ClockInEvent;
 import com.example.clockin.model.AttendanceRecord;
-import com.example.clockin.model.CompanyLocation;
+import com.example.clockin.model.Company;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
-import com.example.clockin.repo.CompanyLocationRepository;
+import com.example.clockin.repo.CompanyRepository;
 import com.example.clockin.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class AttendanceService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private CompanyLocationRepository companyLocationRepository;
+    private CompanyRepository companyRepository;
 
     /**
      * 由 Facade 呼叫，用來處理打卡流程。
@@ -92,16 +92,16 @@ public class AttendanceService {
         return attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
     }
 
-    private CompanyLocation getCompanyLocation() {
-        return companyLocationRepository.findFirstByOrderByIdAsc();
+    private Company getCompanyLocation() {
+        return companyRepository.findFirstByOrderByIdAsc();
     }
     public double getCompanyLongitude() {
-        CompanyLocation companyLocation = getCompanyLocation();
-        return companyLocation.getLongitude();
+        Company company = getCompanyLocation();
+        return company.getLongitude();
     }
     public double getCompanyLatitude() {
-        CompanyLocation companyLocation = getCompanyLocation();
-        return companyLocation.getLatitude();
+        Company company = getCompanyLocation();
+        return company.getLatitude();
     }
 }
 

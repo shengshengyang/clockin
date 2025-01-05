@@ -1,19 +1,35 @@
 package com.example.clockin.service.factory;
 
 import com.example.clockin.dto.ClockInEvent;
+import com.example.clockin.model.Company;
+import com.example.clockin.repo.CompanyRepository;
+import com.example.clockin.service.ClockInService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ClockInFactory {
 
-    /**
-     * 建立打卡事件的邏輯，可在此封裝
-     * 如果只是單純 new 一個物件，也許用不到 Factory
-     * 但若你要在建立物件前後做驗證或統一處理，就很適合用 Factory
-     */
+    ClockInService clockInService;
+    CompanyRepository companyRepository;
+
+    public ClockInFactory(ClockInService clockInService, CompanyRepository companyRepository) {
+
+        this.clockInService = clockInService;
+        this.companyRepository = companyRepository;
+    }
+
+
     public ClockInEvent createClockInEvent(String username, double lat, double lng) {
-        // 例如可以先檢查 lat, lng 合理性、或加上默認時間戳
+
+
+        Company company = companyRepository.findFirstByOrderByIdAsc();
+
+        double distance = clockInService.calculateDistance(lat, lng, company.getLatitude(), company.getLongitude());
+        if (distance > 200) {
+            throw new IllegalArgumentException("The distance between the provided coordinates and the clock-in coordinates must not exceed 200 units.");
+        }
         // 這裡只是簡單示範
         return new ClockInEvent(username, lat, lng);
     }
+
 }

@@ -1,4 +1,4 @@
-package com.example.clockin.controller;
+package com.example.clockin.controller.api;
 
 import com.example.clockin.dto.*;
 import com.example.clockin.exception.ApiException;
