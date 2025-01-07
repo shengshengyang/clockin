@@ -10,13 +10,7 @@ import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.UserRepository;
 import com.example.clockin.service.AttendanceService;
 import com.example.clockin.util.UserUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
-import org.springframework.kafka.requestreply.RequestReplyFuture;
-import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -32,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/attendance")
@@ -43,18 +35,15 @@ private final AttendanceService attendanceService;
 private final AttendanceRecordRepository attendanceRecordRepository;
 private final UserRepository userRepository;
 private final UserUtil util;
-private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
 
 public AttendanceController(AttendanceService attendanceService,
                             AttendanceRecordRepository attendanceRecordRepository,
                             UserRepository userRepository,
-                            UserUtil util,
-                            ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate) {
+                            UserUtil util) {
     this.attendanceService = attendanceService;
     this.attendanceRecordRepository = attendanceRecordRepository;
     this.userRepository = userRepository;
     this.util = util;
-    this.replyingKafkaTemplate = replyingKafkaTemplate;
 }
 
     @GetMapping("/clock-in")
@@ -77,25 +66,10 @@ public AttendanceController(AttendanceService attendanceService,
         String username = principal.getName();
         double latitude = location.get("latitude");
         double longitude = location.get("longitude");
-
         // 創建打卡事件
         ClockInEvent event = new ClockInEvent(username, latitude, longitude);
-
-        // 創建消息並設置回覆主題
-        org.springframework.messaging.Message<ClockInEvent> message = MessageBuilder
-                .withPayload(event)
-                .setHeader(KafkaHeaders.TOPIC, "clock-in-request-topic")
-                .setHeader(KafkaHeaders.REPLY_TOPIC, "clock-in-response-topic")
-                .build();
-
-        // 發送請求並等待回覆
-        RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
-
-        // 設置超時時間，避免無限等待
-        org.springframework.messaging.Message<ClockInResult> response = (org.springframework.messaging.Message<ClockInResult>) future.get(10, TimeUnit.SECONDS);
-        ClockInResult result = response.getPayload();
-
-        return result.getMessage();
+        // 呼叫服務層處理打卡
+        return attendanceService.processClockIn(event);
     }
 
     // 獲取所有考勤記錄

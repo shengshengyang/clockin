@@ -10,6 +10,7 @@ import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.ShiftRepository;
 import com.example.clockin.repo.UserRepository;
+import com.example.clockin.service.AttendanceService;
 import com.example.clockin.service.LoginService;
 import com.example.clockin.service.MailService;
 import com.example.clockin.util.UserUtil;
@@ -19,10 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
-import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -33,9 +30,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 @RestController
 @RequestMapping("/api")
@@ -43,7 +37,6 @@ public class ApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiController.class);
 
-    private final ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final UserRepository userRepository;
     private final UserUtil userUtil;
@@ -53,18 +46,18 @@ public class ApiController {
     private final MailService mailService;
     @Value("${front.end.url}")
     private String frontEndUrl;
+    private final AttendanceService attendanceService;
 
     @Autowired
-    public ApiController(ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate,
-                         AttendanceRecordRepository attendanceRecordRepository,
-                         UserRepository userRepository, UserUtil userUtil, LoginService loginService, ShiftRepository shiftRepository, MailService mailService) {
-        this.replyingKafkaTemplate = replyingKafkaTemplate;
+    public ApiController(AttendanceRecordRepository attendanceRecordRepository,
+                         UserRepository userRepository, UserUtil userUtil, LoginService loginService, ShiftRepository shiftRepository, MailService mailService, AttendanceService attendanceService) {
         this.attendanceRecordRepository = attendanceRecordRepository;
         this.userRepository = userRepository;
         this.userUtil = userUtil;
         this.loginService = loginService;
         this.shiftRepository = shiftRepository;
         this.mailService = mailService;
+        this.attendanceService = attendanceService;
     }
 
     @PostMapping("/login")
@@ -108,33 +101,14 @@ public class ApiController {
     }
 
     @PostMapping("/clock-in")
-    public String clockIn(@RequestBody Map<String, Double> location, Principal principal) throws ExecutionException, InterruptedException, TimeoutException {
+    public String clockIn(@RequestBody Map<String, Double> location, Principal principal) {
         String username = principal.getName();
         double latitude = location.get("latitude");
         double longitude = location.get("longitude");
 
-        logger.info("Clock-in attempt for user: {} at location: ({}, {})", username, latitude, longitude);
-
         ClockInEvent event = new ClockInEvent(username, latitude, longitude);
 
-        Message<ClockInEvent> message = MessageBuilder
-                .withPayload(event)
-                .setHeader(KafkaHeaders.TOPIC, "clock-in-request-topic")
-                .setHeader(KafkaHeaders.REPLY_TOPIC, "clock-in-response-topic")
-                .build();
-
-
-        RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
-        Message<?> responseMessage = future.get(10, TimeUnit.SECONDS);
-
-        if (responseMessage.getPayload() instanceof ClockInResult result) {
-            logger.info("Clock-in successful for user: {}", username);
-            return result.getMessage();
-        } else {
-            logger.error("Unexpected response type for user: {}", username);
-            throw new ApiException(SysCode.UNEXPECTED_RESPONSE_TYPE, "Unexpected response type");
-        }
-
+        return  attendanceService.processClockIn(event);
     }
 
     @GetMapping("/records")

@@ -13,7 +13,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class ClockInResult implements Serializable {
 
-    private boolean success;
+    private boolean isSuccess;
     private String message;
 
 }

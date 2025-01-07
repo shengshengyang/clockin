@@ -1,19 +1,32 @@
 package com.example.clockin.service;
 
 import com.example.clockin.dto.ClockInEvent;
+import com.example.clockin.dto.ClockInResult;
+import com.example.clockin.exception.ApiException;
+import com.example.clockin.exception.SysCode;
 import com.example.clockin.model.AttendanceRecord;
 import com.example.clockin.model.Company;
 import com.example.clockin.model.User;
 import com.example.clockin.repo.AttendanceRecordRepository;
 import com.example.clockin.repo.CompanyRepository;
 import com.example.clockin.repo.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
+import org.springframework.kafka.requestreply.RequestReplyMessageFuture;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class AttendanceService {
@@ -25,32 +38,42 @@ public class AttendanceService {
     @Autowired
     private CompanyRepository companyRepository;
 
-    /**
-     * 由 Facade 呼叫，用來處理打卡流程。
-     * @param event 建立好的打卡事件 (包含 username, lat, lng)
-     * @return 回傳顯示給前端的訊息
-     */
-    public String processClockIn(ClockInEvent event) throws Exception {
+    @Autowired
+    private ReplyingKafkaTemplate<String, ClockInEvent, ClockInResult> replyingKafkaTemplate;
+
+    Logger logger = LoggerFactory.getLogger(AttendanceService.class);
+
+
+   public String processClockIn(ClockInEvent event) {
+    try {
         // 1. 檢查用戶是否存在
         User user = userRepository.findByUsername(event.getUsername());
         if (user == null) {
             return "用戶不存在：" + event.getUsername();
         }
+        logger.info("Clock-in attempt for user: {} at location: ({}, {})", event.getUsername(), event.getLatitude(), event.getLongitude());
+        // 2. 創建消息並設置回覆主題
+        org.springframework.messaging.Message<ClockInEvent> message = MessageBuilder
+                .withPayload(event)
+                .setHeader(KafkaHeaders.TOPIC, "clock-in-request-topic")
+                .setHeader(KafkaHeaders.REPLY_TOPIC, "clock-in-response-topic")
+                .build();
 
-        // 2. 建立一筆新的考勤記錄
-        AttendanceRecord record = new AttendanceRecord();
-        record.setUser(user);
-        record.setClockInTime(LocalDateTime.now()); // 以當前時間做打卡時間
+        RequestReplyMessageFuture<String, ClockInEvent> future = replyingKafkaTemplate.sendAndReceive(message);
+        Message<?> responseMessage = future.get(10, TimeUnit.SECONDS);
 
-        // 3. 寫入資料庫
-        attendanceRecordRepository.save(record);
-
-        // 4. 可能做更多事情 (例如發送通知、寫日誌、整合 Kafka...)
-        //    若要做 Kafka Request-Reply，可在這裡加上非同步處理邏輯
-
-        // 5. 回傳成功訊息
-        return "打卡成功！";
+        if (responseMessage.getPayload() instanceof ClockInResult result) {
+            logger.info("Clock-in successful for user: {}", event.getUsername());
+            return result.getMessage();
+        } else {
+            logger.error("Unexpected response type for user: {}", event.getUsername());
+            throw new ApiException(SysCode.UNEXPECTED_RESPONSE_TYPE, "Unexpected response type");
+        }
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        logger.error("Error processing clock-in for user: {}", event.getUsername(), e);
+        throw new ApiException(SysCode.CLOCK_IN_FAILED, "Clock-in process failed", e);
     }
+}
 
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
@@ -59,14 +82,15 @@ public class AttendanceService {
         double companyLng = getCompanyLongitude();
         double distance = calculateDistance(latitude, longitude, companyLat, companyLng);
 
-        double MAX_DISTANCE = 200;
-        if (distance <= MAX_DISTANCE) {
+        double maxDistance = companyRepository.findFirstByOrderByIdAsc().getRadius();
+
+        if (distance <= maxDistance) {
             // 保存打卡記錄
             User user = userRepository.findByUsername(username);
-            AttendanceRecord record = new AttendanceRecord();
-            record.setUser(user);
-            record.setClockInTime(LocalDateTime.now());
-            attendanceRecordRepository.save(record);
+            AttendanceRecord attendanceRecord = new AttendanceRecord();
+            attendanceRecord.setUser(user);
+            attendanceRecord.setClockInTime(LocalDateTime.now());
+            attendanceRecordRepository.save(attendanceRecord);
             return true;
         } else {
             return false;
@@ -87,6 +111,7 @@ public class AttendanceService {
 
         return earthRadius * c;
     }
+
     public List<AttendanceRecord> getAttendanceRecordsByUsername(String username) {
         User user = userRepository.findByUsername(username);
         return attendanceRecordRepository.findByUserOrderByClockInTimeDesc(user);
@@ -95,10 +120,12 @@ public class AttendanceService {
     private Company getCompanyLocation() {
         return companyRepository.findFirstByOrderByIdAsc();
     }
+
     public double getCompanyLongitude() {
         Company company = getCompanyLocation();
         return company.getLongitude();
     }
+
     public double getCompanyLatitude() {
         Company company = getCompanyLocation();
         return company.getLatitude();
