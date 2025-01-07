@@ -1,6 +1,6 @@
 package com.example.clockin.config;
 
-import com.example.clockin.controller.ApiController;
+import com.example.clockin.controller.api.ApiController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;

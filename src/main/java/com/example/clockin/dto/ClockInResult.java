@@ -1,33 +1,19 @@
 package com.example.clockin.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.Serializable;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class ClockInResult implements Serializable {
 
-    private boolean success;
+    private boolean isSuccess;
     private String message;
 
-    public ClockInResult(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-    }
-
-    public ClockInResult() {
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }
