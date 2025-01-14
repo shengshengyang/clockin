@@ -1,16 +1,12 @@
 package com.example.clockin.dto;
 
 import com.example.clockin.model.MenuItem;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 
-@Setter
-@Getter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class MenuItemDTO {
     private Integer id;
     private String name;
@@ -18,4 +14,6 @@ public class MenuItemDTO {
     private String role;
     private String parentName;
 
+    public MenuItemDTO(MenuItem menuItem) {
+    }
 }

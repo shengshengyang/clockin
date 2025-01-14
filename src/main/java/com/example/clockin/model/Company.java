@@ -1,5 +1,7 @@
 package com.example.clockin.model;
 
+import com.example.clockin.config.AuditEntityListener;
+import com.example.clockin.service.Auditable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +10,8 @@ import lombok.Setter;
 @Getter
 @Entity
 @Table(name = "company")
-public class Company {
+@EntityListeners(AuditEntityListener.class)
+public class Company implements Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +29,6 @@ public class Company {
     @Column(nullable = false)
     private Double radius;
 
+    @Transient
+    private String oldValueSnapshot;
 }
