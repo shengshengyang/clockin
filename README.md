@@ -125,7 +125,7 @@ flowchart TB
     D --> E{Token 有效?}
     E -- Yes --> F[SecurityContextHolder 設定認證]
     E -- No --> G[跳過認證或回應 401]
-    F --> H[繼續後續處理 (Controller)]
+    F --> H[繼續後續處理 Controller]
     G --> H[繼續或被拒絕]
 
     B -- No --> X[進入 WebSecurityConfig]
